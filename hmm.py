@@ -17,14 +17,14 @@ from viterbi import Viterbi
 from viterbi import FB
 from baum_welch import BW
 
-NUMBER_BINS = 16
+NUMBER_BINS = 50
 ALPHA = 0.999
 LAMBDA = 500
 BINS = np.array([])
 TIMES = np.array([])
 START_POS = 0
 END_POS = 0
-WINDOW = 1000
+WINDOW = 100
 # turns off plotting
 plt.ioff()
 
@@ -150,8 +150,17 @@ def find_dif_seq(vcf_file, start_pos, end_pos, window):
                     dif_seq += '1'
                     break
         dif_seq += "0"
-    import pdb; pdb.set_trace()
+    #TODO: MAKE THE BELOW TRUE
+    print(len(list(range(start_pos, end_pos+1, window))) == len(dif_seq))
     return dif_seq
+
+def decoded_to_bins(decoded_array, bins):
+    bars = np.zeros(bins.shape, dtype=np.int64)
+    for i in decoded_array:
+        for j in range(len(bins)-1):
+            if i <= bins[j+1]:
+                bars[j] += 1
+    return bars
 
 def main():
     BINS, TIMES = create_bins()
@@ -194,7 +203,10 @@ def main():
            log_tran=log_tran, log_emit=log_emit, state=TIMES)
 
     posterior_decoding = fb.P_decoded
+    posterior_decoding_bars = decoded_to_bins(posterior_decoding, BINS)
     posterior_mean = fb.P_mean
+    posterior_mean_bars = decoded_to_bins(posterior_mean, BINS)
+    import pdb; pdb.set_trace()
 
     # # Baum-Welch
     # bw = BW(dif_seq=dif_string, log_init=log_init,
@@ -237,8 +249,13 @@ def main():
     plt.ylabel('TMRCA')
     plt.savefig("testing_whether_dif_string_works.png")
 
-    import pdb; pdb.set_trace()
+    plt.figure(9)
+    plt.bar(np.arange(1,NUMBER_BINS+1), posterior_mean_bars)
 
+    plt.title('The world is a test')
+    plt.xlabel('locus')
+    plt.ylabel('TMRCA')
+    plt.savefig("testing_whether_bars_work.png")
 
     """
     Plot estimated

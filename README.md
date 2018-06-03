@@ -29,3 +29,17 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 
 - Work to do: 1. retrieved log-time buckets for histogram, 2. initialized init, tran, emit probabilities based on new buckets, 3. VCF -> disparities sequence file
 
+---
+06-02-18
+
+- Times bucket is used for the algorithm, bins bucket is used for creating bar graphs
+
+- Fixed init, tran, emit initial probabilities to be closer to starting assumptions
+
+- Added decodings to buckets method to assign results to bars, can graph bar graphs
+
+- Created VCF to difference sequence translator
+
+- Need to do: Window translation for VCF -> difference is not working properly, come up with datasets to test now, clean up code, particularly BW and global variables with bar graph
+
+---
