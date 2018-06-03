@@ -89,16 +89,16 @@ Forward-Backward
 """
 class FB:
 
-    def __init__(self, seq_file, log_init, log_tran, log_emit, state):
-        self.seq_dif = self.find_dif(seq_file)
+    def __init__(self, dif_seq, log_init, log_tran, log_emit, state):
+        self.dif_seq = dif_seq
         self.log_init = log_init
         self.log_tran = log_tran
         self.log_emit = log_emit
         self.state = np.array(state)
         self.K = len(self.log_init)
-        self.L = len(self.seq_dif)
+        self.L = len(self.dif_seq)
         self.F = np.zeros((self.K,self.L)) # K x L
-        self.F[:,0] = self.log_init + self.log_emit[:,int(self.seq_dif[0])]
+        self.F[:,0] = self.log_init + self.log_emit[:,int(self.dif_seq[0])]
         self.B = np.zeros((self.K,self.L))
         self.B[:,-1] = 0
         self.P = np.zeros((self.K,self.L)) # posterior probability table
@@ -108,26 +108,15 @@ class FB:
 
         self.fb()
 
-    def find_dif(self, seq_file):
-        seq_1 = ""
-        seq_2 = ""
+    def format_fasta(self, seq_file):
+        dif = ""
         # take in two sequences
         with open(seq_file) as f:
             next(f)
             for line in f:
                 new_line = line.strip("\n")
-                if new_line[0] == ">":
-                    break
-                else:
-                    seq_1 += new_line
-            for line in f:
-                new_line = line.strip("\n")
-                seq_2 += new_line
-        # compare the two
-        diff_string = ""
-        for i in range(0, len(seq_1)):
-            diff_string += "0" if seq_1[i] == seq_2[i] else "1"
-        return diff_string
+                dif += new_line
+        return dif
     """
     log_sum
     """
@@ -153,7 +142,7 @@ class FB:
                 for prev_state in range(self.K):
                     likelihood.append(self.F[prev_state][col-1] + self.log_tran[prev_state][row])
                 likelihood = self.log_sum_all(likelihood)
-                self.F[row][col] = likelihood + self.log_emit[row][int(self.seq_dif[col])]
+                self.F[row][col] = likelihood + self.log_emit[row][int(self.dif_seq[col])]
 
     """
     Backward
@@ -163,7 +152,7 @@ class FB:
             for row in range(self.K):
                 likelihood = []
                 for next_state in range(self.K):
-                    likelihood.append(self.B[next_state][col+1] + self.log_tran[row][next_state] + self.log_emit[next_state][int(self.seq_dif[col+1])])
+                    likelihood.append(self.B[next_state][col+1] + self.log_tran[row][next_state] + self.log_emit[next_state][int(self.dif_seq[col+1])])
                 self.B[row][col] = self.log_sum_all(likelihood)
 
     """

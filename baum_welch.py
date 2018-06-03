@@ -14,9 +14,9 @@ import math
 
 class BW:
 
-    def __init__(self, seq_file, log_init, log_tran, log_emit, state, i):
-        self.seq_file = seq_file
-        self.fb = FB(seq_file=self.seq_file, log_init=log_init,
+    def __init__(self, dif_seq, log_init, log_tran, log_emit, state, i):
+        self.dif_seq = dif_seq
+        self.fb = FB(dif_seq=dif_seq, log_init=log_init,
                    log_tran=log_tran, log_emit=log_emit, state=state)
         self.i = i
         self.X_p_list = [self.fb.X_p]   # the optimization marker

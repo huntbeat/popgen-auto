@@ -8,6 +8,8 @@ from math import log
 import numpy as np
 import sys
 import os
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import expon
 
@@ -18,13 +20,19 @@ from baum_welch import BW
 NUMBER_BINS = 16
 ALPHA = 0.999
 LAMBDA = 500
-TIMES = []
+BINS = np.array([])
+TIMES = np.array([])
+START_POS = 0
+END_POS = 0
+WINDOW = 1000
+# turns off plotting
+plt.ioff()
 
 def parse_args():
     """Parse and return command-line arguments"""
 
     parser = optparse.OptionParser(description='HMM for Tmrca')
-    parser.add_option('-f', '--fasta_filename', type='string', help='path to input fasta file')
+    parser.add_option('-v', '--vcf_filename', type='string', help='path to input vcf file')
     parser.add_option('-p', '--param_filename', type='string', help='path to input parameter file')
     parser.add_option('-t', '--truth_filename', type='string', help='path to file of true values')
     parser.add_option('-i', '--num_iter', type='int', default=15, help='number of Baum-Welch iterations')
@@ -32,7 +40,7 @@ def parse_args():
     parser.add_option('-s', '--suffix', type='string', help='suffix string to include in output files')
     (opts, args) = parser.parse_args()
 
-    mandatories = ['fasta_filename','truth_filename','out_folder','suffix']
+    mandatories = ['vcf_filename','truth_filename','out_folder','suffix']
     for m in mandatories:
         if not opts.__dict__[m]:
             print('mandatory option ' + m + ' is missing\n')
@@ -93,86 +101,143 @@ def display_params(params):
 
 def create_bins():
     left, right = expon.interval(ALPHA)
-    left_bins = np.linspace(np.log(left),0,NUMBER_BINS/2)
-    right_bins = np.linspace(0,np.log(right),NUMBER_BINS/2)
+    left_bins = np.linspace(np.log(left),0,NUMBER_BINS)
+    right_bins = np.linspace(0,np.log(right),NUMBER_BINS)
     left_bins = np.exp(left_bins)
     right_bins = np.exp(right_bins)
+    left_times = left_bins[::2]
+    right_times = right_bins[::2]
+    left_bins = left_bins[1::2]
+    right_bins = right_bins[1::2]
     bins = np.concatenate((left_bins,right_bins))
-    return LAMBDA * np.insert(bins,[0],0)
+    bins = np.insert(bins,0,0.0)
+    times = np.concatenate((left_times,right_times))
+    return bins, times 
+
+def find_dif_seq(vcf_file, start_pos, end_pos, window):
+    pos_set = set()
+    data_list = []
+    dif_seq = ""
+    n = 0
+    with open(vcf_file) as infile:
+        data = 0
+        pos = -1
+        for line in infile:
+            if not line.startswith('#'):
+                stuff = line.split()
+                prev_pos = pos
+                pos = int(stuff[1])
+                prev_data = data 
+                data = stuff[9][0]
+                if pos not in pos_set:
+                    n += 1
+                if data == 1:
+                    pos_set.add(pos)
+                    data_list.append(data)
+                else:
+                    if pos not in pos_set:
+                        if prev_pos != pos:
+                            pos_set.add(pos)
+                            data_list.append(data)
+    pos_list = sorted(pos_set)
+    # FOR NOW
+    start_pos = pos_list[0]
+    end_pos = pos_list[-1]
+    for i in range(start_pos, end_pos+1, window):
+        for j in range(i, i+window):
+            if j in pos_list:
+                if data_list[pos_list.index(j)] == '1':
+                    dif_seq += '1'
+                    break
+        dif_seq += "0"
+    import pdb; pdb.set_trace()
+    return dif_seq
 
 def main():
-
-    TIMES = create_bins()
+    BINS, TIMES = create_bins()
     time_length = TIMES.size
+    # label differences as 0 or 1
     seq_file_types = 2
 
     # parse commandline arguments
     opts = parse_args()
     param_filename = opts.param_filename
 
+    # gets difference sequence from vcf
+    dif_string = find_dif_seq(opts.vcf_filename, START_POS, END_POS, WINDOW)
+
     # read parameter file
     if opts.param_filename != None:
         log_init, log_tran, log_emit = parse_params(opts.param_filename)
     else:
         log_init = np.ones((time_length,)) / time_length
-        log_tran = np.ones((time_length,time_length)) / time_length
+        log_tran = np.eye(time_length) / time_length
+        GIVEN = 0.001
+        log_tran -= GIVEN
+        log_tran = np.absolute(log_tran)
+        log_tran /= time_length
+        for i in range(time_length):
+            log_tran[i,i] *= time_length
         log_emit = np.ones((time_length,seq_file_types)) / seq_file_types
+        GIVEN = 0.001
+        log_emit[:,0] = 1 - GIVEN
+        log_emit[:,1] = GIVEN
 
-    plt.figure(7)
-    plt.plot(TIMES, np.ones((TIMES.shape)))
-    plt.savefig("test.png")
+    # Test whether time and bin making works
+    # plt.figure(7)
+    # plt.scatter(TIMES, np.ones((TIMES.shape)))
+    # plt.scatter(BINS, 2*np.ones(BINS.shape))
+    # plt.savefig("test.png")
     
-    import pdb; pdb.set_trace()
+    # Forward-Backward
+    fb = FB(dif_seq=dif_string, log_init=log_init,
+           log_tran=log_tran, log_emit=log_emit, state=TIMES)
 
-    bw = BW(seq_file=opts.fasta_filename, log_init=log_init,
-            log_tran=log_tran, log_emit=log_emit, state=TIMES, i=opts.num_iter)
+    posterior_decoding = fb.P_decoded
+    posterior_mean = fb.P_mean
 
-    X_p = bw.X_p_list
+    # # Baum-Welch
+    # bw = BW(dif_seq=dif_string, log_init=log_init,
+    #         log_tran=log_tran, log_emit=log_emit, state=TIMES, i=opts.num_iter)
 
-    u_log_init = bw.u_log_init
-    u_log_tran = bw.u_log_tran
-    u_log_emit = bw.u_log_emit
+    # X_p = bw.X_p_list
 
-    u_viterbi = Viterbi(seq_file=opts.fasta_filename, log_init=u_log_init,
-    log_tran=u_log_tran, log_emit=u_log_emit, state=TIMES).path
+    # u_log_init = bw.u_log_init
+    # u_log_tran = bw.u_log_tran
+    # u_log_emit = bw.u_log_emit
 
-    """
-    Decodings Estimated
-    """
-    with open(opts.out_folder + 'decodings_estimated_' + opts.suffix + '.txt', 'w') as outputFile:
-        outputFile.write("# Viterbi_decoding posterior_decoding posterior_mean\n")
-        for i in range(len(u_viterbi)):
-            outputFile.write("{} {} {}\n".format(u_viterbi[i], bw.fb.P_decoded[i], bw.fb.P_mean[i]))
+   #  """
+   #  Decodings Estimated
+   #  """
+   #  with open(opts.out_folder + 'decodings_estimated_' + opts.suffix + '.txt', 'w') as outputFile:
+   #      outputFile.write("# Viterbi_decoding posterior_decoding posterior_mean\n")
+   #      for i in range(len(u_viterbi)):
+   #          outputFile.write("{} {} {}\n".format(u_viterbi[i], bw.fb.P_decoded[i], bw.fb.P_mean[i]))
 
-    """
-    Likelihoods
-    """
-    with open(opts.out_folder + 'likelihoods_' + opts.suffix + '.txt', 'w') as outputFile:
-        outputFile.write("initial log-likelihood: %f\n" % (fb.X_p) )
-        outputFile.write("final log-likelihood: %f\n" % (bw.fb.X_p) )
+   #  """
+   #  Likelihoods
+   #  """
+   #  with open(opts.out_folder + 'likelihoods_' + opts.suffix + '.txt', 'w') as outputFile:
+   #      outputFile.write("initial log-likelihood: %f\n" % (fb.X_p) )
+   #      outputFile.write("final log-likelihood: %f\n" % (bw.fb.X_p) )
 
     """
     Plot Initial
     """
     # Plot the estimated hidden time sequences
+    length = len(posterior_decoding)
     locus = np.array(range(length))
 
-    # Get the true values, read them into an array
-    true_tmrca = []
-    with open(opts.truth_filename) as f:
-        for line in f:
-            true_tmrca.append(line.strip("\n"))
     plt.figure(0)
-    plt.plot(locus, true_tmrca)
-    plt.plot(locus, viterbi)
     plt.plot(locus, posterior_decoding)
     plt.plot(locus, posterior_mean)
 
-    plt.title('Initial Decodings, ' + opts.suffix)
+    plt.title('The world is a test')
     plt.xlabel('locus')
     plt.ylabel('TMRCA')
-    plt.legend(['truth', 'Viterbi', 'Decoding', 'Mean'])
-    plt.savefig(opts.out_folder + "plot_initial_" + opts.suffix + ".pdf")
+    plt.savefig("testing_whether_dif_string_works.png")
+
+    import pdb; pdb.set_trace()
 
 
     """
