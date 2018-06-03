@@ -44,7 +44,7 @@ class BW:
                 for cur_state in range(self.fb.K):
                     prob = (self.fb.F[prev_state][col]+
                             self.fb.log_tran[prev_state][cur_state]+
-                            self.fb.log_emit[cur_state][int(self.fb.seq_dif[col+1])]+
+                            self.fb.log_emit[cur_state][int(self.fb.dif_seq[col+1])]+
                             self.fb.B[cur_state][col] - self.fb.X_p)
                             # F*B*... -> log F + log B
                             # log sum F*B -> log_sum (log F + log B)
@@ -64,10 +64,10 @@ class BW:
         self.u_log_emit = np.zeros(np.shape(self.fb.log_emit))
         for col in range(self.fb.L):
             for cur_state in range(self.fb.K):
-                if not self.u_log_emit[cur_state][int(self.fb.seq_dif[col])] == 0:
-                    self.u_log_emit[cur_state][int(self.fb.seq_dif[col])] = self.log_sum(self.fb.P[cur_state][col], self.u_log_emit[cur_state][int(self.fb.seq_dif[col])])
+                if not self.u_log_emit[cur_state][int(self.fb.dif_seq[col])] == 0:
+                    self.u_log_emit[cur_state][int(self.fb.dif_seq[col])] = self.log_sum(self.fb.P[cur_state][col], self.u_log_emit[cur_state][int(self.fb.dif_seq[col])])
                 else:
-                    self.u_log_emit[cur_state][int(self.fb.seq_dif[col])] = self.fb.P[cur_state][col]
+                    self.u_log_emit[cur_state][int(self.fb.dif_seq[col])] = self.fb.P[cur_state][col]
         normalize = np.zeros((self.fb.K))
         for prev_state in range(self.fb.K):
             normalize[prev_state] = self.log_sum_all(self.u_log_emit[prev_state][:])
@@ -84,5 +84,5 @@ class BW:
         self.update_tran()
         self.update_emit()
         self.update_init()
-        self.fb = FB(seq_file=self.seq_file, log_init=self.u_log_init, log_tran=self.u_log_tran, log_emit=self.u_log_emit, state=self.fb.state)
+        self.fb = FB(dif_seq=self.dif_seq, log_init=self.u_log_init, log_tran=self.u_log_tran, log_emit=self.u_log_emit, state=self.fb.state)
         self.X_p_list.append(self.fb.X_p)

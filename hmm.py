@@ -22,9 +22,9 @@ ALPHA = 0.999
 LAMBDA = 500
 BINS = np.array([])
 TIMES = np.array([])
-START_POS = 0
-END_POS = 0
-WINDOW = 100
+START_POS = 112131266
+END_POS   = 112352266
+WINDOW    = 10000
 # turns off plotting
 plt.ioff()
 
@@ -155,7 +155,7 @@ def find_dif_seq(vcf_file, start_pos, end_pos, window):
     return dif_seq
 
 def decoded_to_bins(decoded_array, bins):
-    bars = np.zeros(bins.shape, dtype=np.int64)
+    bars = np.zeros((bins.size-1,), dtype=np.int64)
     for i in decoded_array:
         for j in range(len(bins)-1):
             if i <= bins[j+1]:
@@ -198,25 +198,31 @@ def main():
     # plt.scatter(BINS, 2*np.ones(BINS.shape))
     # plt.savefig("test.png")
     
-    # Forward-Backward
-    fb = FB(dif_seq=dif_string, log_init=log_init,
-           log_tran=log_tran, log_emit=log_emit, state=TIMES)
+    # # Forward-Backward
+    # fb = FB(dif_seq=dif_string, log_init=log_init,
+    #        log_tran=log_tran, log_emit=log_emit, state=TIMES)
 
-    posterior_decoding = fb.P_decoded
+    # posterior_decoding = fb.P_decoded
+    # posterior_decoding_bars = decoded_to_bins(posterior_decoding, BINS)
+    # posterior_mean = fb.P_mean
+    # posterior_mean_bars = decoded_to_bins(posterior_mean, BINS)
+
+
+    # Baum-Welch
+    bw = BW(dif_seq=dif_string, log_init=log_init,
+            log_tran=log_tran, log_emit=log_emit, state=TIMES, i=opts.num_iter)
+
+    X_p = bw.X_p_list
+
+    u_log_init = bw.u_log_init
+    u_log_tran = bw.u_log_tran
+    u_log_emit = bw.u_log_emit
+
+    posterior_decoding = bw.fb.P_decoded
     posterior_decoding_bars = decoded_to_bins(posterior_decoding, BINS)
-    posterior_mean = fb.P_mean
+    posterior_mean = bw.fb.P_mean
     posterior_mean_bars = decoded_to_bins(posterior_mean, BINS)
     import pdb; pdb.set_trace()
-
-    # # Baum-Welch
-    # bw = BW(dif_seq=dif_string, log_init=log_init,
-    #         log_tran=log_tran, log_emit=log_emit, state=TIMES, i=opts.num_iter)
-
-    # X_p = bw.X_p_list
-
-    # u_log_init = bw.u_log_init
-    # u_log_tran = bw.u_log_tran
-    # u_log_emit = bw.u_log_emit
 
    #  """
    #  Decodings Estimated
@@ -256,6 +262,8 @@ def main():
     plt.xlabel('locus')
     plt.ylabel('TMRCA')
     plt.savefig("testing_whether_bars_work.png")
+
+    import pdb; pdb.set_trace()
 
     """
     Plot estimated
