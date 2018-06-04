@@ -76,14 +76,17 @@ def vcf_to_dif(vcf_file, start, end, window):
     pos_list = sorted(pos_set)
 
     # This creates the difference sequence with all the above mind
+    found = False
     for i in range(start, end+1, window):
         for j in range(i, i+window):
             if j in pos_list:
                 if data_list[pos_list.index(j)] == '1':
                     dif_seq += '1'
+                    found = True
                     break
-        dif_seq += '0'
-    #TODO: MAKE THE BELOW TRUE
+        if not found:
+            dif_seq += '0'
+    #TODO: FIX
     print(len(list(range(start, end+1, window))) == len(dif_seq))
     return dif_seq
 
