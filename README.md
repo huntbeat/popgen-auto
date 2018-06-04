@@ -6,7 +6,7 @@ Hyong Hark Lee, under Professor Sara Mathieson's guidance
 
 ---
 
-Example entry 
+Example entry
 
 Sam and Hunter: 05-03-18 (1.5hrs)
 - downloading 1000genomes data on chromosome 12, use bcftools to parse VCF file. But running into a lot of trouble trying to find rs671. VCF Data is now on `/scratch/cs68`
@@ -43,3 +43,15 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 - Need to do: Window translation for VCF -> difference is not working properly, come up with datasets to test now, clean up code, particularly BW and global variables with bar graph
 
 ---
+06-04-18
+
+- Fixed HMM to work with data (separated dif_seq translator, changed initial probabilities, fixed details) (took some time to debug...)
+
+- Works well! We get a bar graph nearly equal to one another, which is what we expect
+
+- Things to do: 1. understand why it may not an exact equal line; 2. create a statistic that measures how much it deviates (is variance good enough?), 3. clean up \\
+  more code, 4. use simulated data to test whether the exp. distribution holds 5. read papers
+
+```
+
+```
