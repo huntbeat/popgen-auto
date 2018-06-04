@@ -105,7 +105,7 @@ class FB:
         self.P_mean = np.zeros((self.L)) # posterior mean
         self.P_decoded = np.zeros((self.L)) # posterior decoding
         self.X_p = 0
-
+        
         self.fb()
 
     def format_fasta(self, seq_file):

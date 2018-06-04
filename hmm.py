@@ -1,6 +1,19 @@
 """
-Top-level comment
-Note: feel free to modify the starter code below
+hmm.py
+Hunter Lee
+
+Input:  -d  difference sequence in FASTA format, first line must include start
+            and end loci
+        -b  number of bins
+        -p  path to initial probability parameters file
+        -t  path to true values
+        -i  number of iterations
+        -o  path to output folder for figures
+        -P  path to output folder for updated probability parameters
+
+Example command:
+python3 hmm.py -d dif/sequences_2mu.txt -p initial_parameters_2mu.txt -b 4 -i 1
+python3 hmm.py -d dif/chr12_aldh2.txt -b 20 -i 1
 """
 
 import optparse
@@ -8,44 +21,58 @@ from math import log
 import numpy as np
 import sys
 import os
-import matplotlib
-matplotlib.use('Agg')
+# # turns off plotting
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+# # turns off plotting
+# plt.ioff()
 from scipy.stats import expon
 
 from viterbi import Viterbi
 from viterbi import FB
 from baum_welch import BW
 
-NUMBER_BINS = 50
+# For defining intervals for log-spaced bins in the exponential distribution
 ALPHA = 0.999
-LAMBDA = 500
-BINS = np.array([])
-TIMES = np.array([])
-START_POS = 112131266
-END_POS   = 112352266
-WINDOW    = 10000
-# turns off plotting
-plt.ioff()
+# Mutation rate
+MU = 1.25*10e-8
+# Effective population size
+N = 10000
+# Theta
+THETA = 4*N*MU
 
 def parse_args():
     """Parse and return command-line arguments"""
 
     parser = optparse.OptionParser(description='HMM for Tmrca')
-    parser.add_option('-v', '--vcf_filename', type='string', help='path to input vcf file')
+    parser.add_option('-d', '--dif_fasta_filename', type='string', help='path to input difference sequence')
+    parser.add_option('-b', '--num_bins', type='string', help='number of bins desired')
     parser.add_option('-p', '--param_filename', type='string', help='path to input parameter file')
     parser.add_option('-t', '--truth_filename', type='string', help='path to file of true values')
     parser.add_option('-i', '--num_iter', type='int', default=15, help='number of Baum-Welch iterations')
-    parser.add_option('-o', '--out_folder', type='string', help='path to folder for output files')
-    parser.add_option('-s', '--suffix', type='string', help='suffix string to include in output files')
+    parser.add_option('-o', '--out_folder', type='string', help='path to folder for output figures')
+    parser.add_option('-P', '--out_param', type='string', help='path to folder for updated parameters')
     (opts, args) = parser.parse_args()
 
-    mandatories = ['vcf_filename','truth_filename','out_folder','suffix']
+    mandatories = ['dif_fasta_filename','num_bins','num_iter']
     for m in mandatories:
         if not opts.__dict__[m]:
             print('mandatory option ' + m + ' is missing\n')
             parser.print_help()
             sys.exit()
+
+    if opts.out_param == None:
+        opts.out_param = 'updated_param'
+
+    if not os.path.exists(opts.out_param):
+        os.makedirs(opts.out_param)
+
+    if opts.out_folder == None:
+        opts.out_folder = 'fig'
+
+    if not os.path.exists(opts.out_folder):
+        os.makedirs(opts.out_folder)
 
     return opts
 
@@ -99,10 +126,13 @@ def display_params(params):
 
     return param_str
 
-def create_bins():
+"""
+Creates log-spaced bins
+"""
+def create_bins(num_bins):
     left, right = expon.interval(ALPHA)
-    left_bins = np.linspace(np.log(left),0,NUMBER_BINS)
-    right_bins = np.linspace(0,np.log(right),NUMBER_BINS)
+    left_bins = np.linspace(np.log(left),0,num_bins)
+    right_bins = np.linspace(0,np.log(right),num_bins)
     left_bins = np.exp(left_bins)
     right_bins = np.exp(right_bins)
     left_times = left_bins[::2]
@@ -112,48 +142,11 @@ def create_bins():
     bins = np.concatenate((left_bins,right_bins))
     bins = np.insert(bins,0,0.0)
     times = np.concatenate((left_times,right_times))
-    return bins, times 
+    return bins, times
 
-def find_dif_seq(vcf_file, start_pos, end_pos, window):
-    pos_set = set()
-    data_list = []
-    dif_seq = ""
-    n = 0
-    with open(vcf_file) as infile:
-        data = 0
-        pos = -1
-        for line in infile:
-            if not line.startswith('#'):
-                stuff = line.split()
-                prev_pos = pos
-                pos = int(stuff[1])
-                prev_data = data 
-                data = stuff[9][0]
-                if pos not in pos_set:
-                    n += 1
-                if data == 1:
-                    pos_set.add(pos)
-                    data_list.append(data)
-                else:
-                    if pos not in pos_set:
-                        if prev_pos != pos:
-                            pos_set.add(pos)
-                            data_list.append(data)
-    pos_list = sorted(pos_set)
-    # FOR NOW
-    start_pos = pos_list[0]
-    end_pos = pos_list[-1]
-    for i in range(start_pos, end_pos+1, window):
-        for j in range(i, i+window):
-            if j in pos_list:
-                if data_list[pos_list.index(j)] == '1':
-                    dif_seq += '1'
-                    break
-        dif_seq += "0"
-    #TODO: MAKE THE BELOW TRUE
-    print(len(list(range(start_pos, end_pos+1, window))) == len(dif_seq))
-    return dif_seq
-
+"""
+Slots numbers into appropriate bins
+"""
 def decoded_to_bins(decoded_array, bins):
     bars = np.zeros((bins.size-1,), dtype=np.int64)
     for i in decoded_array:
@@ -163,54 +156,57 @@ def decoded_to_bins(decoded_array, bins):
     return bars
 
 def main():
-    BINS, TIMES = create_bins()
-    time_length = TIMES.size
-    # label differences as 0 or 1
-    seq_file_types = 2
-
     # parse commandline arguments
     opts = parse_args()
     param_filename = opts.param_filename
+    dif_string = ""
+    with open(opts.dif_fasta_filename, 'r') as inputFasta:
+        next(inputFasta)
+        for line in inputFasta:
+            dif_string += line.replace("\n","")
+    inputFasta = opts.dif_fasta_filename.replace("dif/","")
 
-    # gets difference sequence from vcf
-    dif_string = find_dif_seq(opts.vcf_filename, START_POS, END_POS, WINDOW)
+    # create bins and appropriate time intervals
+    bins, times = create_bins(opts.num_bins)
+    time_length = times.size
 
     # read parameter file
     if opts.param_filename != None:
         log_init, log_tran, log_emit = parse_params(opts.param_filename)
+    # if parameter path not given, automatically create initial probabilities
     else:
-        log_init = np.ones((time_length,)) / time_length
-        log_tran = np.eye(time_length) / time_length
+        init = np.ones((time_length,)) / time_length
+        tran = np.ones((time_length, time_length)) / time_length
         GIVEN = 0.001
-        log_tran -= GIVEN
-        log_tran = np.absolute(log_tran)
-        log_tran /= time_length
+        tran *= GIVEN
         for i in range(time_length):
-            log_tran[i,i] *= time_length
-        log_emit = np.ones((time_length,seq_file_types)) / seq_file_types
-        GIVEN = 0.001
-        log_emit[:,0] = 1 - GIVEN
-        log_emit[:,1] = GIVEN
+            tran[i,i] = 1 - GIVEN
+        emit = np.ones((time_length, 2))
+        for i in range(time_length):
+            exp_emit_prob = np.exp(-THETA*times[i])
+            emit[i,0] = exp_emit_prob
+            emit[i,1] = 1 - exp_emit_prob
+        log_init, log_tran, log_emit = np.log(init), np.log(tran), np.log(emit)
+
 
     # Test whether time and bin making works
     # plt.figure(7)
-    # plt.scatter(TIMES, np.ones((TIMES.shape)))
+    # plt.scatter(times, np.ones((times.shape)))
     # plt.scatter(BINS, 2*np.ones(BINS.shape))
     # plt.savefig("test.png")
-    
+
     # # Forward-Backward
     # fb = FB(dif_seq=dif_string, log_init=log_init,
-    #        log_tran=log_tran, log_emit=log_emit, state=TIMES)
+    #        log_tran=log_tran, log_emit=log_emit, state=times)
 
     # posterior_decoding = fb.P_decoded
     # posterior_decoding_bars = decoded_to_bins(posterior_decoding, BINS)
     # posterior_mean = fb.P_mean
     # posterior_mean_bars = decoded_to_bins(posterior_mean, BINS)
 
-
     # Baum-Welch
     bw = BW(dif_seq=dif_string, log_init=log_init,
-            log_tran=log_tran, log_emit=log_emit, state=TIMES, i=opts.num_iter)
+            log_tran=log_tran, log_emit=log_emit, state=times, i=opts.num_iter)
 
     X_p = bw.X_p_list
 
@@ -218,11 +214,10 @@ def main():
     u_log_tran = bw.u_log_tran
     u_log_emit = bw.u_log_emit
 
-    posterior_decoding = bw.fb.P_decoded
-    posterior_decoding_bars = decoded_to_bins(posterior_decoding, BINS)
-    posterior_mean = bw.fb.P_mean
-    posterior_mean_bars = decoded_to_bins(posterior_mean, BINS)
-    import pdb; pdb.set_trace()
+    bw_posterior_decoding = bw.fb.P_decoded
+    bw_posterior_decoding_bars = decoded_to_bins(bw_posterior_decoding, bins)
+    bw_posterior_mean = bw.fb.P_mean
+    bw_posterior_mean_bars = decoded_to_bins(bw_posterior_mean, bins)
 
    #  """
    #  Decodings Estimated
@@ -243,67 +238,67 @@ def main():
     Plot Initial
     """
     # Plot the estimated hidden time sequences
-    length = len(posterior_decoding)
-    locus = np.array(range(length))
+    length = len(bw_posterior_decoding)
+    locus = np.array(list(range(length)))
 
     plt.figure(0)
-    plt.plot(locus, posterior_decoding)
-    plt.plot(locus, posterior_mean)
-
-    plt.title('The world is a test')
+    plt.title('locus - TMRCA : BW')
+    plt.plot(locus, bw_posterior_decoding, color='royalblue', label='post decoding')
+    plt.plot(locus, bw_posterior_mean, color='seagreen', label='post mean')
     plt.xlabel('locus')
     plt.ylabel('TMRCA')
-    plt.savefig("testing_whether_dif_string_works.png")
+    plt.legend(loc='upper right')
+    plt.show()
+    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_line.png"))
 
-    plt.figure(9)
-    plt.bar(np.arange(1,NUMBER_BINS+1), posterior_mean_bars)
-
-    plt.title('The world is a test')
-    plt.xlabel('locus')
-    plt.ylabel('TMRCA')
-    plt.savefig("testing_whether_bars_work.png")
-
-    import pdb; pdb.set_trace()
-
-    """
-    Plot estimated
-    """
-    locus = np.array(range(len(u_viterbi)))
     plt.figure(1)
-    plt.plot(locus, true_tmrca)
-    plt.plot(locus, u_viterbi)
-    plt.plot(locus, bw.fb.P_decoded)
-    plt.plot(locus, bw.fb.P_mean)
+    width = 0.33
+    plt.title('Number of loci within TMRCA interval : BW')
+    plt.bar(np.arange(1,int(opts.num_bins)+1) + width, bw_posterior_decoding_bars, width, color='royalblue', label='post decoding')
+    plt.bar(np.arange(1,int(opts.num_bins)+1), bw_posterior_mean_bars, width, color='seagreen', label='post mean')
+    plt.xlabel('TMRCA bins')
+    plt.ylabel('number of loci')
+    plt.legend(loc='upper left')
+    plt.show()
+    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_bar.png"))
 
-    plt.title('Estimated Decodings, ' + opts.suffix)
-    plt.xlabel('locus')
-    plt.ylabel('TMRCA')
-    plt.legend(['truth', 'Viterbi', 'Decoding', 'Mean'])
-    plt.savefig(opts.out_folder + "plot_estimated_" + opts.suffix + ".pdf")
+    # """
+    # Plot estimated
+    # """
+    # locus = np.array(range(len(u_viterbi)))
+    # plt.figure(1)
+    # plt.plot(locus, true_tmrca)
+    # plt.plot(locus, u_viterbi)
+    # plt.plot(locus, bw.fb.P_decoded)
+    # plt.plot(locus, bw.fb.P_mean)
+    #
+    # plt.title('Estimated Decodings, ' + opts.suffix)
+    # plt.xlabel('locus')
+    # plt.ylabel('TMRCA')
+    # plt.legend(['truth', 'Viterbi', 'Decoding', 'Mean'])
+    # plt.savefig(opts.out_folder + "plot_estimated_" + opts.suffix + ".pdf")
 
     """
     Estimated Parameters
     """
     estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
-    with open(opts.out_folder + 'estimated_parameters_' + opts.suffix + '.txt', 'w') as outputFile:
+    with open(opts.out_param + "/" + inputFasta.replace(".txt",'upd_param.txt'), 'w') as outputFile:
         outputFile.write(estimated_param)
 
-    # """
-    # Baum-Welch Iteration outputs
-    # """
-    #
+    """
+    Baum-Welch Iteration outputs
+    """
     # for ind, ele in enumerate(X_p):
     #     print("Iteration %d" % (ind))
     #     print(ele)
-    #
-    # iter_index = range(len(X_p))
-    #
-    # plt.figure(2)
-    # plt.plot(iter_index, X_p)
-    # plt.title('Baum-Welch on example dataset, ' + opts.suffix)
-    # plt.xlabel('Baum-Welch iteration')
-    # plt.ylabel('Log-likelihood, P(X)')
-    # plt.show()
+
+
+    plt.figure(2)
+    plt.plot(np.arange(1,len(X_p)+1), X_p)
+    plt.title('Baum-Welch accuracy plot')
+    plt.xlabel('Baum-Welch iteration')
+    plt.ylabel('Log-likelihood, P(X)')
+    plt.show()
 
 if __name__ == "__main__":
   main()
