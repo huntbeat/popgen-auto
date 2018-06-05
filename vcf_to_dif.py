@@ -10,7 +10,7 @@ Output: FASTA format file, first line includes the starting and ending locus,
         0001010101100100101010011010101010101010101000010...
 
 Example command:
-python3 vcf_to_dif.py -v input/chr12_aldh2.vcf -s 112131266 -e 112352266 -w 1 -o dif
+python3 vcf_to_dif.py -v input/chr12_aldh2.vcf -s 112131266 -e 112352266 -w 100 -o dif
 """
 
 import os
@@ -84,10 +84,9 @@ def vcf_to_dif(vcf_file, start, end, window):
                     dif_seq += '1'
                     found = True
                     break
-        if not found:
-            dif_seq += '0'
-    #TODO: FIX
-    print(len(list(range(start, end+1, window))) == len(dif_seq))
+        if not found:          
+          dif_seq += '0'
+        found = False
     return dif_seq
 
 def main():

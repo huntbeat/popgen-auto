@@ -1,5 +1,9 @@
 """
 Simulate data with msprime
+
+Example simulation:
+(0.0, 331.36482265111175) 9468.168251749572
+612.8830808691417       [1 0]
 """
 
 import msprime
@@ -21,24 +25,22 @@ tree_sequence = msprime.simulate(sample_size=2, Ne=N_e, \
     length=LEN, mutation_rate = MU, recombination_rate=R_r)
 
 # see when the Tmrca changes
+interval = 0
 for tree in tree_sequence.trees():
-    interval = tree.interval    # (start, end)
+    prev_interval = interval
+    interval = int(tree.interval[1]) # (start, end)
     tmrca = tree.tmrca(0,1)     # in units of years
-    for i in range(int(tree.interval[1])): 
+    for i in range(prev_interval, interval): 
         TMRCA = np.append(TMRCA, tmrca)
-
-plt.figure(1)
-plt.plot(np.arange(1,len(TMRCA)+1),TMRCA)
-plt.show()
+print(len(TMRCA))
 
 # see when mutations occur
 pos = 0
 for variant in tree_sequence.variants():
     prev_pos = pos
-    pos = variant.site.position # locus
-    pos = int(pos)
-    geno = variant.genotypes    # [0,1]
-    for i in range(prev_pos, pos):
+    pos = int(variant.site.position)  # locus
+    geno = variant.genotypes          # [0,1]
+    for i in range(prev_pos, pos-1):
         SEQ_1 += '0'
         SEQ_2 += '0'
         SEQ_D += '0'
@@ -50,6 +52,8 @@ for variant in tree_sequence.variants():
         SEQ_1 += '0'
         SEQ_2 += '1'
         SEQ_D += '1'
-print(len(SEQ_1))
-print(len(SEQ_2))
+for i in range(LEN - len(SEQ_D)):
+    SEQ_1 += '0'
+    SEQ_2 += '0'
+    SEQ_D += '0'
 print(len(SEQ_D))
