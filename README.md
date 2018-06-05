@@ -52,6 +52,11 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 - Things to do: 1. understand why it may not an exact equal line; 2. create a statistic that measures how much it deviates (is variance good enough?), 3. clean up \\
   more code, 4. use simulated data to test whether the exp. distribution holds 5. read papers
 
-```
+---
+06.05.18
 
-```
+- Checking which dimension or parameter makes the model more accurate (closer to ground truth)? L, mu, window, bins, iterations, etc.
+
+- Use average for TMRCA windowing operation
+
+- 

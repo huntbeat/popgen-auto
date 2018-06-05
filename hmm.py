@@ -14,6 +14,10 @@ Input:  -d  difference sequence in FASTA format, first line must include start
 Example command:
 python3 hmm.py -d dif/sequences_2mu.txt -p initial_parameters_2mu.txt -b 4 -i 1
 python3 hmm.py -d dif/chr12_aldh2.txt -b 20 -i 1
+python3 hmm.py -d dif/msprime_10000_1e-7_10000_1e-7.txt -b 6 -i 2 \
+                -t dif/TMRCA_msprime_10000_1e-7_10000_1e-7.txt
+python3 hmm.py -d dif/msprime_10000_4e-7_10000_1e-7.txt -b 6 -i 2 \
+                -t dif/TMRCA_msprime_10000_4e-7_10000_1e-7.txt
 """
 
 import optparse
@@ -170,6 +174,14 @@ def main():
     bins, times = create_bins(opts.num_bins)
     time_length = times.size
 
+    # read truth file
+    trueTMRCA = np.array([])
+    if opts.truth_filename != None:
+        with open(opts.truth_filename) as truthFile:
+            next(truthFile)
+            for line in truthFile:
+                trueTMRCA = np.append(trueTMRCA, float(line))
+
     # read parameter file
     if opts.param_filename != None:
         log_init, log_tran, log_emit = parse_params(opts.param_filename)
@@ -245,22 +257,29 @@ def main():
     plt.title('locus - TMRCA : BW')
     plt.plot(locus, bw_posterior_decoding, color='royalblue', label='post decoding')
     plt.plot(locus, bw_posterior_mean, color='seagreen', label='post mean')
+    if opts.truth_filename != None:
+        plt.plot(np.arange(1,len(trueTMRCA)+1), trueTMRCA, color='black', label='truth')
     plt.xlabel('locus')
     plt.ylabel('TMRCA')
     plt.legend(loc='upper right')
     plt.show()
-    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_line.png"))
+    plt.close()
+    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_line.png"), format='png')
 
     plt.figure(1)
     width = 0.33
     plt.title('Number of loci within TMRCA interval : BW')
     plt.bar(np.arange(1,int(opts.num_bins)+1) + width, bw_posterior_decoding_bars, width, color='royalblue', label='post decoding')
     plt.bar(np.arange(1,int(opts.num_bins)+1), bw_posterior_mean_bars, width, color='seagreen', label='post mean')
+    if opts.truth_filename != None:
+        trueTMRCA_bars = decoded_to_bins(trueTMRCA, bins)
+        plt.bar(np.arange(1,int(opts.num_bins)+1), trueTMRCA_bars, color='black', label='truth')
     plt.xlabel('TMRCA bins')
     plt.ylabel('number of loci')
     plt.legend(loc='upper left')
     plt.show()
-    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_bar.png"))
+    plt.close()
+    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_bar.png"), format='png')
 
     # """
     # Plot estimated
@@ -292,7 +311,7 @@ def main():
     #     print("Iteration %d" % (ind))
     #     print(ele)
 
-
+    plt.close()
     plt.figure(2)
     plt.plot(np.arange(1,len(X_p)+1), X_p)
     plt.title('Baum-Welch accuracy plot')
