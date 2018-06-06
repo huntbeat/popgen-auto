@@ -8,7 +8,7 @@ Output: 1. DIF_string, FASTA format file, first line includes above parameters
         2. True TRMCA, FASTA format file, first line includes above parameters
 
 Example command:
-python3 msprime_to_dif.py -l 1000000 -m 1e-7 -n 10000 -r 1e-9 -w 100
+python3 msprime_to_dif.py -l 1000000 -m 1e-7 -n 10000 -r 1e-7 -w 10
 """
 
 import msprime
@@ -116,7 +116,7 @@ def main():
     opts = parse_args()
     TMRCA, SEQ_D = msprime_to_dif(int(opts.length),
                             float(opts.mu), int(opts.n_e), float(opts.recomb), int(opts.window), opts.win_stat)
-    out_filename = "msprime_" + opts.length + "_m" + opts.mu + "_Ne" + opts.n_e + "_r" + opts.recomb 
+    out_filename = "msprime_" + opts.length + "_m" + opts.mu + "_Ne" + opts.n_e + "_r" + opts.recomb + "_w" + opts.window
     with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_", " ") + "\n")
         for i in range(0, len(SEQ_D), 100):

@@ -14,10 +14,12 @@ Input:  -d  difference sequence in FASTA format, first line must include start
 Example command:
 python3 hmm.py -d dif/sequences_2mu.txt -p initial_parameters_2mu.txt -b 4 -i 1
 python3 hmm.py -d dif/chr12_aldh2.txt -b 20 -i 1
-python3 hmm.py -d dif/msprime_100000_m1e-7_Ne10000_r1e-7_w10.txt -b 6 -i 2 \
-                -t dif/TMRCA_msprime_100000_m1e-7_Ne10000_r1e-7_w10.txt
-python3 hmm.py -d dif/msprime_100000_m1e-7_Ne10000_r1e-7_w10.txt -b 6 -i 2 \
-                -t dif/TMRCA_msprime_100000_m1e-7_Ne10000_r1e-7_w10.txt
+python3 hmm.py -d dif/msprime_100000_m1e-7_Ne10000_r1e-7_w1.txt -b 6 -i 2 \
+                -t dif/TMRCA_msprime_100000_m1e-7_Ne10000_r1e-7_w1.txt
+python3 hmm.py -d dif/msprime_1000000_m1e-7_Ne10000_r1e-7_w10.txt -b 6 -i 2 \
+                -t dif/TMRCA_msprime_1000000_m1e-7_Ne10000_r1e-7_w10.txt
+python3 hmm.py -d dif/msprime_1000000_m1e-7_Ne10000_r1e-7_w1.txt -b 6 -i 2 \
+                -t dif/TMRCA_msprime_1000000_m1e-7_Ne10000_r1e-7_w1.txt
 """
 
 import optparse
@@ -25,12 +27,12 @@ from math import log
 import numpy as np
 import sys
 import os
-# turns off plotting
-import matplotlib
-matplotlib.use('Agg')
+# # turns off plotting
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# turns off plotting
-plt.ioff()
+# # turns off plotting
+# plt.ioff()
 from scipy.stats import expon
 
 from viterbi import Viterbi
@@ -134,18 +136,16 @@ def display_params(params):
 Creates log-spaced bins
 """
 def create_bins(num_bins):
-    left, right = expon.interval(ALPHA)
-    left_bins = np.linspace(np.log(left),0,num_bins)
-    right_bins = np.linspace(0,np.log(right),num_bins)
-    left_bins = np.exp(left_bins)
-    right_bins = np.exp(right_bins)
-    left_times = left_bins[::2]
-    right_times = right_bins[::2]
-    left_bins = left_bins[1::2]
-    right_bins = right_bins[1::2]
-    bins = np.concatenate((left_bins,right_bins))
-    bins = np.insert(bins,0,0.0)
-    times = np.concatenate((left_times,right_times))
+    bins = np.array([0.0])
+    times = np.array([])
+    quantile = ALPHA / num_bins
+    cur_pos = 0.0
+    for i in range(num_bins):
+        cur_pos += quantile
+        right_side = expon.ppf(cur_pos)
+        left_side = bins[-1]
+        bins = np.append(bins,right_side)
+        times = np.append(times,(left_side+right_side)/2)
     return bins, times
 
 """
@@ -157,6 +157,7 @@ def decoded_to_bins(decoded_array, bins):
         for j in range(len(bins)-1):
             if i <= bins[j+1]:
                 bars[j] += 1
+                break
     return bars
 
 def main():
@@ -171,7 +172,7 @@ def main():
     inputFasta = opts.dif_fasta_filename.replace("dif/","")
 
     # create bins and appropriate time intervals
-    bins, times = create_bins(opts.num_bins)
+    bins, times = create_bins(int(opts.num_bins))
     time_length = times.size
 
     # read truth file
@@ -199,7 +200,6 @@ def main():
             emit[i,0] = exp_emit_prob
             emit[i,1] = 1 - exp_emit_prob
         log_init, log_tran, log_emit = np.log(init), np.log(tran), np.log(emit)
-
 
     # Test whether time and bin making works
     # plt.figure(7)
@@ -278,6 +278,11 @@ def main():
     plt.legend(loc='upper left')
     plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_bar.png"), format='png')
     plt.show()
+    """
+    SANITY
+    """
+    print(len(bw_posterior_mean))
+    print(len(bw_posterior_decoding))
 
     # """
     # Plot estimated
