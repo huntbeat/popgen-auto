@@ -18,6 +18,8 @@ python3 hmm.py -d dif/msprime_100000_m1e-7_Ne10000_r1e-7_w1.txt -b 6 -i 2 \
                 -t dif/TMRCA_msprime_100000_m1e-7_Ne10000_r1e-7_w1.txt
 python3 hmm.py -d dif/msprime_1000000_m1e-7_Ne10000_r1e-7_w10.txt -b 6 -i 2 \
                 -t dif/TMRCA_msprime_1000000_m1e-7_Ne10000_r1e-7_w10.txt
+python3 hmm.py -d dif/msprime_1000000_m1e-7_Ne10000_r1e-7_w1.txt -b 6 -i 2 \
+                -t dif/TMRCA_msprime_1000000_m1e-7_Ne10000_r1e-7_w1.txt
 """
 
 import optparse

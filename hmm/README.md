@@ -73,3 +73,9 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 - Varying pop. size for msprime
 
 - In the end, the logic for log buckets was not correct - made it too complicated than it should be - and the bar method had a bug. All fixed, now results follow hypotheses
+
+- Goal: make the HMM model follow the truth as closely as it can
+
+- It seems like the recombination rate and length both help to converge the truth to the exponential distribution
+
+-
