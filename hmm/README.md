@@ -63,4 +63,13 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 
 - Initial probabilities Parameters depend on mutation, recombination rate
 
--
+---
+06.06.18
+
+- Either discretization or msprime is not working
+
+- Check whether log bin making works
+
+- Varying pop. size for msprime
+
+- In the end, the logic for log buckets was not correct - made it too complicated than it should be - and the bar method had a bug. All fixed, now results follow hypotheses
