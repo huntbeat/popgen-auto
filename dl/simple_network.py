@@ -8,7 +8,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Flatten
 from keras import optimizers
 
-with h5py.File('data.hdf5','r') as f:
+with h5py.File('data_simulation/data.hdf5','r') as f:
   constant_h5 = f.get('constant')
   bottleneck_h5 = f.get('bottleneck')
   output_h5 = f.get('output')
