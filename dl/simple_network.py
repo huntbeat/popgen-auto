@@ -8,7 +8,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Flatten
 from keras import optimizers
 
-with h5py.File('data_simulation/data.hdf5','r') as f:
+# fetch data 
+path = '/scratch/nhoang1/data.hdf5'
+with h5py.File(path,'r') as f:
   constant_h5 = f.get('constant')
   bottleneck_h5 = f.get('bottleneck')
   output_h5 = f.get('output')
@@ -17,15 +19,18 @@ with h5py.File('data_simulation/data.hdf5','r') as f:
   output = np.array(output_h5)
 data = np.concatenate((constant,bottleneck))
 
+# neural network 
 n, L = data.shape[1:]
 data = np.reshape(data,(-1,n,L,1))
 model = Sequential()
 model.add(Conv2D(3, (5, 5), strides=(1,1), activation='relu', input_shape=(n, L, 1)))
 model.add(Conv2D(3, (4, 4), strides=(1,1), activation='relu'))
+model.add(Conv2D(3, (3, 3), strides=(1,1), activation='relu'))
 model.add(Flatten())
 model.add(Dense(1, activation='sigmoid'))
 
 SGD = optimizers.SGD()
 model.compile(optimizer=SGD, loss="binary_crossentropy", metrics=['accuracy'])
-model.fit(data, output, verbose=1, validation_split=0.2, epochs=50)
+history = model.fit(data, output, verbose=1, validation_split=0.2, epochs=10)
+plot(history)
 

@@ -6,12 +6,8 @@ import msprime
 import h5py as h5
 import numpy as np
 
-CONSTANT_SIZE = 100
-BOTTLENECK_SIZE = 100
-
-data_file = h5.File('data.hdf5','w')
-constant_matrices = [] 
-bottleneck_matrices = []
+CONSTANT_SIZE = 100000
+BOTTLENECK_SIZE = 100000
 
 ##################################
 
@@ -21,8 +17,12 @@ def uniform_mutation_count(tree_sequence, length):
   # see when mutations occur
   for variant in tree_sequence.variants():
     genotypes.append(np.array(variant.genotypes))
-
   genotypes = np.array(genotypes)
+
+  # account for when there was no variation
+  if genotypes.shape == (0,):
+      genotypes = np.reshape(genotypes,(0,25))
+
   len_diff = genotypes.shape[0] - length
   if len_diff > 0: 
     genotypes = genotypes[:length]
@@ -39,14 +39,19 @@ def uniform_mutation_count(tree_sequence, length):
 
 ############ CONSTANT ############
 
+constant_matrices = [] 
 for i in range(CONSTANT_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7)
   genotypes = uniform_mutation_count(tree_sequence,50)
   constant_matrices.append(genotypes)
 
+  if i % 100 == 0:
+    print(i)
+
 ############ BOTTLENECK ############
 
+bottleneck_matrices = []
 for j in range(BOTTLENECK_SIZE):
 
   # change population size from Ne to 1/10 of Ne at 200 generations
@@ -64,8 +69,13 @@ for j in range(BOTTLENECK_SIZE):
   genotypes = uniform_mutation_count(tree_sequence,50)
   bottleneck_matrices.append(genotypes)
 
+  if j % 100 == 0:
+    print(j+100000)
+
 ####################################
 
+path = '/scratch/nhoang1/data.hdf5'
+data_file = h5.File(path,'w')
 data_file.create_dataset("constant",data=np.array(constant_matrices))
 data_file.create_dataset("bottleneck",data=np.array(bottleneck_matrices))
 
