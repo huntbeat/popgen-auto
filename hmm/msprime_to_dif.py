@@ -53,14 +53,18 @@ def parse_args():
     return opts
 
 def msprime_to_dif(length, mu, n_e, recomb, window, win_stat):
-    TMRCA = np.array([])
+    TMRCA = []
     SEQ_1 = ""
     SEQ_2 = ""
     SEQ_D = ""
 
+    bottleneck = msprime.PopulationParametersChange(time=200,initial_size=1000)
+    recovery   = msprime.PopulationParametersChange(time=750,initial_size=10000)
+    size_change = [bottleneck,recovery]
+
     # simulate with n=2, N=10000, and L=10000
     tree_sequence = msprime.simulate(sample_size=2, Ne=n_e, \
-        length=length, mutation_rate = mu, recombination_rate=recomb)
+        length=length, mutation_rate = mu, recombination_rate=recomb, demographic_events=size_change)
 
     # see when the Tmrca changes
     interval = 0
@@ -69,14 +73,10 @@ def msprime_to_dif(length, mu, n_e, recomb, window, win_stat):
         interval = int(tree.interval[1]) # (start, end)
         tmrca = tree.tmrca(0,1)     # in units of years
         for i in range(prev_interval, interval):
-            TMRCA = np.append(TMRCA, tmrca / (2 * n_e))
-    old_TMRCA = TMRCA
-    TMRCA = np.array([])
-    for i in range(0,length,window):
-        if win_stat == 'mean':
-            TMRCA = np.append(TMRCA, np.average(old_TMRCA[i:i+window]))
+            # TMRCA = np.append(TMRCA, tmrca / (2 * n_e))
+            TMRCA.append(tmrca / (2* n_e))
+    TMRCA = np.array(TMRCA)
 
-    # see when mutations occur
     pos = 0
     printed = False
     number_rep = 0

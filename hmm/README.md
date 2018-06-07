@@ -78,4 +78,13 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 
 - It seems like the recombination rate and length both help to converge the truth to the exponential distribution
 
+---
+06.07.18
+
+- Fix bins to be exactly half-size the intervals
+
+- Work with different params and changed bins on same data, add iterations too
+
+- Combine 100000 or parallelize HMM.py
+
 -
