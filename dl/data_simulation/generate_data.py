@@ -6,20 +6,22 @@ import msprime
 import h5py as h5
 import numpy as np
 
-CONSTANT_SIZE = 5
-BOTTLENECK_SIZE = 5
+CONSTANT_SIZE = 100
+BOTTLENECK_SIZE = 100
 
-data_file = h5.File('data.h5','w')
+data_file = h5.File('data.hdf5','w')
 constant_matrices = [] 
 bottleneck_matrices = []
 
 ##################################
 
+''' pads or cuts matrix to uniform shape '''
 def uniform_mutation_count(tree_sequence, length):
   genotypes = []
   # see when mutations occur
   for variant in tree_sequence.variants():
     genotypes.append(np.array(variant.genotypes))
+
   genotypes = np.array(genotypes)
   len_diff = genotypes.shape[0] - length
   if len_diff > 0: 
@@ -40,7 +42,7 @@ def uniform_mutation_count(tree_sequence, length):
 for i in range(CONSTANT_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7)
-  genotypes = uniform_mutation_count(tree_sequence,45)
+  genotypes = uniform_mutation_count(tree_sequence,50)
   constant_matrices.append(genotypes)
 
 ############ BOTTLENECK ############
@@ -59,18 +61,18 @@ for j in range(BOTTLENECK_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7, \
       demographic_events=size_change_lst)
-  genotypes = uniform_mutation_count(tree_sequence,30)
+  genotypes = uniform_mutation_count(tree_sequence,50)
   bottleneck_matrices.append(genotypes)
 
 ####################################
 
-data_file.create_dataset("constant",data=constant_matrices)
-data_file.create_dataset("bottleneck",data=bottleneck_matrices)
+data_file.create_dataset("constant",data=np.array(constant_matrices))
+data_file.create_dataset("bottleneck",data=np.array(bottleneck_matrices))
+
+# create output array
+constant_output = np.zeros((CONSTANT_SIZE,1))
+bottleneck_output = np.ones((BOTTLENECK_SIZE,1))
+output = np.concatenate((constant_output,bottleneck_output))
+data_file.create_dataset("output",data=output)
+
 data_file.close()
-'''
-with h5.File('metadata.h5','r') as f:
-  lens = f.get('mutation_lengths')
-  np_lens = np.array(lens)
-  print(np_lens.shape)
-  print(np_lens)
-'''
