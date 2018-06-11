@@ -27,12 +27,12 @@ from math import log
 import numpy as np
 import sys
 import os
-# # turns off plotting
-# import matplotlib
-# matplotlib.use('Agg')
+# turns off plotting
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# # turns off plotting
-# plt.ioff()
+# turns off plotting
+plt.ioff()
 from scipy.stats import expon
 
 from viterbi import Viterbi

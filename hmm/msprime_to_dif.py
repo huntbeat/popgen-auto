@@ -8,7 +8,7 @@ Output: 1. DIF_string, FASTA format file, first line includes above parameters
         2. True TRMCA, FASTA format file, first line includes above parameters
 
 Example command:
-python3 msprime_to_dif.py -l 1000000 -m 1e-7 -n 10000 -r 1e-7 -w 10
+python3 msprime_to_dif.py -l 1000000 -m 1e-7 -n 10000 -r 1e-7 -w 1
 """
 
 import msprime
@@ -58,13 +58,9 @@ def msprime_to_dif(length, mu, n_e, recomb, window, win_stat):
     SEQ_2 = ""
     SEQ_D = ""
 
-    bottleneck = msprime.PopulationParametersChange(time=200,initial_size=1000)
-    recovery   = msprime.PopulationParametersChange(time=750,initial_size=10000)
-    size_change = [bottleneck,recovery]
-
     # simulate with n=2, N=10000, and L=10000
     tree_sequence = msprime.simulate(sample_size=2, Ne=n_e, \
-        length=length, mutation_rate = mu, recombination_rate=recomb, demographic_events=size_change)
+        length=length, mutation_rate = mu, recombination_rate=recomb)
 
     # see when the Tmrca changes
     interval = 0

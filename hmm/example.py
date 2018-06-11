@@ -1,16 +1,9 @@
-"""
-Test
-"""
+from multiprocessing import Pool
 
-import numpy as np
-from scipy.stats import expon
+def f(x):
+      return x*x
 
+if __name__ == '__main__':
+      with Pool(5) as p:
+                print(p.map(f, [1, 2, 3]))
 
-def main():
-  for i in range(0,100,10):
-      for j in range(i,i+10):
-          print("a")
-          break
-
-if __name__ == "__main__":
-    main()

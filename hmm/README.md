@@ -87,4 +87,4 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 
 - Combine 100000 or parallelize HMM.py
 
--
+- In the end: simulator works nicely, parallelization works as well. Need to think about parameter updates with different processes, how to make the model more accurate.
