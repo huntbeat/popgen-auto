@@ -1,6 +1,8 @@
 """
 Translate simulation data from MS^2 to pairwise difference sequence
 
+For msms: java -jar msms3.2rc-b163.jar -N 10000 -ms 10 1 -t 40 -r 40 100000 -SAA 100 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > simNat.txt
+
 Example command: python3 msms_to_dif.py -t sim1.txt -l 10000
 """
 
@@ -36,55 +38,78 @@ def parse_args():
 def msms_to_dif(input_file, length):
     input_param = ""
     dif_string_list = []
+    SEQ_D = ""
+    trueTMRCA = []
     with open(input_file) as msms_file:
         input_param = next(msms_file).replace("\n","")
         input_param = "_".join(input_param.split(" ")[:-3])
         next(msms_file) # rand number
         next(msms_file) # blank
         next(msms_file) # "//"
-        next(msms_file) # segsites: __
+        """
+        TMRCA
+        """
+        for line in msms_file:
+            if line[0] == '[':
+                seq_length = int(line[line.find("[")+1:line.find("]")])
+                TMRCA = float(line[line.find(":")+1:line.find(",")])
+                for i in range(seq_length):
+                    trueTMRCA.append(TMRCA)
+            else:
+                break # time: ______ ________
+        _ = next(msms_file) # segsites: __
         pos_string_list = next(msms_file).split(" ")[1:-1]
-        pos_list = []
+        pos_set = set()
         for pos_string in pos_string_list:
-            pos_list.append(int(float(pos_string) * length))
-        pos_list.append(-1)
+            position = int(float(pos_string) * length)
+            while position in pos_set:
+                position += 1
+            pos_set.add(position)
+        pos_list = sorted(list(pos_set))
         num_samples = 0
         seg_sequence_list = [] # segregating sites sequence for each individual
         for line in msms_file:
             num_samples += 1
-            seg_sequence_list.append(line.replace("\n","END"))
+            seg_sequence_list.append(line.replace("\n",""))
             dif_string_list.append("")
         for idx, seq in enumerate(seg_sequence_list):
             if seq == "":
                 break
-        seg_sequence_list = seg_sequence_list[0:idx]
+        seg_sequence_list = seg_sequence_list[0:idx] # gets rid of empty line
         prev_pos = 0
-        for pos in pos_list:
-            if pos != -1:
-                for idx1, dif_string in enumerate(dif_string_list):
-                    for i in range(prev_pos, pos-1):
-                        dif_string += "0"
-                    dif_string_list[idx1] = dif_string
-                prev_pos = pos
-                for idx2, seg_string in enumerate(seg_sequence_list):
-                    seg, new_seg_string = seg_string[0], seg_string[1:]
-                    dif_string_list[idx2] += seg
-                    seg_sequence_list[idx2] = new_seg_string
+        for idx0, pos in enumerate(pos_list):
+            for idx1, dif_string in enumerate(dif_string_list):
+                for i in range(prev_pos, pos-1):
+                    dif_string += "0"
+                dif_string_list[idx1] = dif_string
+            for i in range(prev_pos, pos-1):
+                SEQ_D += "0"
+            for idx2, seg_string in enumerate(seg_sequence_list):
+                seg = seg_string[idx0]
+                dif_string_list[idx2] += seg
+            SEQ_D += "1"
+            prev_pos = pos
         for idx1, dif_string in enumerate(dif_string_list):
             for i in range(prev_pos, length):
                 dif_string += "0"
             dif_string_list[idx1] = dif_string
+        for i in range(prev_pos, length):
+            SEQ_D += "0"
         import pdb; pdb.set_trace()
-        return input_param, dif_string_list
+        return input_param, SEQ_D, trueTMRCA
 
 def main():
     opts = parse_args()
-    input_param, dif_string_list = msms_to_dif(opts.input_file, int(opts.length))
+    input_param, SEQ_D, trueTMRCA = msms_to_dif(opts.input_file, int(opts.length))
     out_filename = input_param
     with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_"," ") + "\n")
-        for dif_string in dif_string_list:
-            outputFile.write(dif_string + "\n")
+        outputFile.write(SEQ_D + "\n")
+
+    with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
+        outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")
+        for i in trueTMRCA:
+            outputFile.write(str(i) + "\n")
 
     # with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
     #     outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")

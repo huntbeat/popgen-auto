@@ -47,41 +47,37 @@ def msms_to_dif(input_file, length):
         pos_list = []
         for pos_string in pos_string_list:
             pos_list.append(int(float(pos_string) * length))
-        pos_list.append(-1)
         num_samples = 0
         seg_sequence_list = [] # segregating sites sequence for each individual
         for line in msms_file:
             num_samples += 1
-            seg_sequence_list.append(line.replace("\n","END"))
+            seg_sequence_list.append(line.replace("\n",""))
             dif_string_list.append("")
         for idx, seq in enumerate(seg_sequence_list):
             if seq == "":
                 break
         seg_sequence_list = seg_sequence_list[0:idx]
         prev_pos = 0
-        for pos in pos_list:
-            if pos != -1:
-                for idx1, dif_string in enumerate(dif_string_list):
-                    for i in range(prev_pos, pos-1):
-                        dif_string += "0"
-                    dif_string_list[idx1] = dif_string
-                prev_pos = pos
-                for idx2, seg_string in enumerate(seg_sequence_list):
-                    seg, new_seg_string = seg_string[0], seg_string[1:]
-                    dif_string_list[idx2] += seg
-                    seg_sequence_list[idx2] = new_seg_string
+        for idx0, pos in enumerate(pos_list):
+            for idx1, dif_string in enumerate(dif_string_list):
+                for i in range(prev_pos, pos-1):
+                    dif_string += "0"
+                dif_string_list[idx1] = dif_string
+            prev_pos = pos
+            for idx2, seg_string in enumerate(seg_sequence_list):
+                seg = seg_string[idx0]
+                dif_string_list[idx2] += seg
         for idx1, dif_string in enumerate(dif_string_list):
             for i in range(prev_pos, length):
                 dif_string += "0"
             dif_string_list[idx1] = dif_string
-        import pdb; pdb.set_trace()
         return input_param, dif_string_list
 
 def main():
     opts = parse_args()
     input_param, dif_string_list = msms_to_dif(opts.input_file, int(opts.length))
     out_filename = input_param
-    with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
+    with open(out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_"," ") + "\n")
         for dif_string in dif_string_list:
             outputFile.write(dif_string + "\n")

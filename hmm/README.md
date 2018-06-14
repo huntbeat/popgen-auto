@@ -88,3 +88,36 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 - Combine 100000 or parallelize HMM.py
 
 - In the end: simulator works nicely, parallelization works as well. Need to think about parameter updates with different processes, how to make the model more accurate.
+
+---
+06.11.18
+
+- Changed plot lines to resemble TMRCA - pop size step graphs
+
+- Created translating script from msms sim to sequences
+
+- Need to look at psmc, diCal for fixing accuracy issues, possibly create GOF plot
+
+- Implement natural selection into msms
+---
+06.12.18
+
+- Configured msms to include and output TMRCA
+
+- Presented on papers
+
+- Trying to figure out how the figures change with natural selection, pop. size change, and both
+
+---
+06.13.18
+
+- Fixed msms sim translator to work with hmm model
+
+- Looked at constant pop, selected region, pop change, and both
+
+---
+06.14.18
+
+- Finding S, pi, SFS, etc. summary statistics for msms simulator to plot
+
+- Discuss hmm output results
