@@ -18,13 +18,14 @@ with h5py.File(path,'r') as f:
   output_h5 = f.get('output')
   constant = np.array(constant_h5)
   bottleneck = np.array(bottleneck_h5)
-  output = np.array(output_h5)
+  output = np.array(output_h5).astype(int)
 data = np.concatenate((constant,bottleneck))
 
 # shuffle data before training
 data_shape_before = data.shape
 output_shape_before = output.shape
 s = np.arange(output.shape[0])
+np.random.shuffle(s)
 data = data[s]
 output = output[s]
 assert(data_shape_before == data.shape)
@@ -35,7 +36,7 @@ si = int(output.shape[0]*0.8)
 trainX = data[:si]
 trainY = output[:si]
 testX = data[si:]
-testY = data[si:]
+testY = output[si:]
 '''
 trainX = data[:100]
 trainY = output[:100]
@@ -97,7 +98,10 @@ print(mat_str)
 print("**********************************")
 
 # save pred vs true to file
-
+with open("predVStrue2.txt", "w") as f:
+  for n in range(num_samples):
+    line = str(true_labels[n]) + " " + str(predictions[n]) + "\n"
+    f.write(line)
 
 # accuracy plot
 plt.plot(history.history['acc'])
