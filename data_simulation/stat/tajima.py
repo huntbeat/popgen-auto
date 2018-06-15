@@ -19,7 +19,8 @@ def parse_msms(filename):
     """Read msms file line by line, parsing out SNP information"""
     with open(filename, 'r') as msms_file:
         input_string = next(msms_file)
-        input_param = input_string.split(" ")
+        input_param = input_string.replace("\n","").split(" ")[:-2]
+        input_string = "".join(input_param)
         # ms -N 10000 2 1 -t 4000 -r 4000 1000000 -eN 0.01 0.05 -eN 0.0375 0.5 -eN 1.25 1
         Ne = int(input_param[2])
         sample_size = int(input_param[3])
@@ -31,7 +32,7 @@ def parse_msms(filename):
         seg_string = next(msms_file)
         # segsites: 888
         total_snps = int(seg_string.split(" ")[1])
-        window = 250
+        window = 50
         genomic_locations = []
 
         # Start and end
@@ -141,8 +142,7 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
     print("--------------------------")
 
     # Plot of Tajima's D
-    plt.close()
-    plt.figure(1,figsize=(14,8))
+    plt.figure(1,figsize=(28,8))
     plt.plot(bp_list, d_list, '-')
     plt.axvline(x=(pos_start+pos_end)/2, color='red')
     plt.axhline(0, color='blue')
@@ -160,36 +160,35 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
     plt.xlabel('Genomic location')
     plt.ylabel("Tajima's D")
     plt.xlim(pos_start,pos_end)
-    plt.ylim(-12,4)
-    plt.show()
+    plt.ylim(-1,1)
     plt.savefig('figs/tajimas_d_' + input_string.replace(" ","_") + '.png')
-    #
-    # Plot of pi, the average number of pairwise differences
-    plt.close()
-    plt.figure(2,figsize=(14,8))
-    plt.plot(bp_list, pi_list, '-ro')
-    plt.axvline(x=(pos_start+pos_end)/2, color='red')
-    # plt.axvspan(pos_start, pos_end, color='red', alpha=0.5)
-    plt.title('# pairwise differences in ' + input_string  + ', window ' + str(window))
-    plt.xlabel('Genomic location')
-    plt.ylabel("Pi")
-    # plt.xlim(min(bp_list),max(bp_list))
-    # plt.ylim()
-    plt.savefig('figs/pi_' + input_string.replace(" ", "_") + '.png')
     plt.show()
-
-    # Plot of S, total number of segregating sites
     plt.close()
-    plt.figure(3,figsize=(14,8))
-    plt.plot(bp_list, S_list, '-go')
-    plt.axvline(x=(pos_start+pos_end)/2, color='red')
-    # plt.axvspan(pos_start, pos_end, color='red', alpha=0.5)
-    plt.title('Segregating sites in ' + input_string + ', window ' + str(window))
-    plt.xlabel('Genomic location')
-    plt.ylabel("S")
-    # plt.xlim(min(bp_list),max(bp_list))
-    # plt.ylim(-1, 60)
-    plt.savefig('figs/S_' + input_string.replace(" ", "_") + '.png')
-    plt.show()
+ 
+    # # Plot of pi, the average number of pairwise differences
+    # plt.figure(2,figsize=(14,8))
+    # plt.plot(bp_list, pi_list, '-ro')
+    # plt.axvline(x=(pos_start+pos_end)/2, color='red')
+    # # plt.axvspan(pos_start, pos_end, color='red', alpha=0.5)
+    # plt.title('# pairwise differences in ' + input_string  + ', window ' + str(window))
+    # plt.xlabel('Genomic location')
+    # plt.ylabel("Pi")
+    # # plt.xlim(min(bp_list),max(bp_list))
+    # # plt.ylim()
+    # plt.savefig('figs/pi_' + input_string.replace(" ", "_") + '.png')
+    # plt.show()
+    # plt.close()
 
-    plt.close('all')
+    # # Plot of S, total number of segregating sites
+    # plt.figure(3,figsize=(14,8))
+    # plt.plot(bp_list, S_list, '-go')
+    # plt.axvline(x=(pos_start+pos_end)/2, color='red')
+    # # plt.axvspan(pos_start, pos_end, color='red', alpha=0.5)
+    # plt.title('Segregating sites in ' + input_string + ', window ' + str(window))
+    # plt.xlabel('Genomic location')
+    # plt.ylabel("S")
+    # # plt.xlim(min(bp_list),max(bp_list))
+    # # plt.ylim(-1, 60)
+    # plt.savefig('figs/S_' + input_string.replace(" ", "_") + '.png')
+    # plt.show()
+    # plt.close()
