@@ -33,9 +33,9 @@ def main():
   ns_variance = []
   bn_variance = []
   for i in range(0,10000,100): #region len is 100
-    #ns_var = ...
+    ns_var = 
     ns_variance.append(ns_var)
-    #bn_var = ...
+    bn_var = 
     bn_variance.append(bn_var)
 
   plt.plot(ns_variance, marker='v')

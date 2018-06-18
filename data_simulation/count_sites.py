@@ -6,9 +6,11 @@ import msprime
 
 CONSTANT_SIZE = 100
 BOTTLENECK_SIZE= 100
+NATSELECT_SIZE = 100
 
 constant_counts = []
 bottleneck_counts = []
+natselect_counts = []
 
 ############ CONSTANT ############
 
@@ -52,3 +54,15 @@ min_count = min(bottleneck_counts)
 mean_count = float(sum(bottleneck_counts)) / max(len(bottleneck_counts), 1)
 print("\nStats (Bottleneck):")
 print("max:",max_count,"\nmin:",min_count,"\nmean:",mean_count,"\n\n")
+
+######### NATURAL SELECTION #########
+
+for k in range(NATSELECT_SIZE):
+  # read from natsim file
+
+max_count = max(natselect_counts)
+min_count = min(natselect_counts)
+mean_count = float(sum(natselect_counts)) / max(len(natselect_counts), 1)
+print("\nStats (Natural Selection):")
+print("max:",max_count,"\nmin:",min_count,"\nmean:",mean_count,"\n\n")
+

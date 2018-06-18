@@ -1,10 +1,11 @@
-""" create simple neural network """
+""" create neural network for constant, bottleneck, and natural selection"""
 
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import sys
+import os
 
 import keras
 from keras.models import Sequential 
@@ -17,16 +18,18 @@ path = '/scratch/nhoang1/'+file_
 with h5py.File(path,'r') as f:
   constant_h5 = f.get('constant')
   bottleneck_h5 = f.get('bottleneck')
+  natselect_h5 = f.get('naturalselection')
   output_h5 = f.get('output')
   constant = np.array(constant_h5)
   bottleneck = np.array(bottleneck_h5)
+  natselect = np.array(natselect_h5)
   #output = np.array(output_h5, dtype='int32')
   output = np.array(output_h5)
 
 #constant = np.zeros_like(constant, dtype='int32')
 #bottleneck = np.ones_like(bottleneck, dtype='int32')
 
-data = np.concatenate((constant,bottleneck))
+data = np.concatenate((constant,bottleneck,natselect))
 #output = np.reshape(output,(output.shape[0]))
 
 # shuffle data before training
@@ -52,40 +55,9 @@ print("single num type:",type(data[0][0][0]))
 print("output shape:",output.shape)
 print("output type:",type(output[0]))
 print("num train:",trainX.shape[0],",num test:",testX.shape[0])
-c = 0 
-b = 0
-'''for i in trainY:
-  if i == 0: c += 1
-  elif i == 1: b+= 1
-print("num train const:",c,",num train bottl:",b)'''
-'''
-# neural network 
-n, L = trainX.shape[1:]
-trainX = np.reshape(trainX,(-1,n,L,1))
-model = Sequential()
-model.add(Conv2D(128, (5,5), activation='relu', input_shape=(n,L,1)))
-model.add(Conv2D(128, (4,4), activation='relu'))
-#model.add(Conv1D(128, 5, activation='relu', input_shape=(n, L)))
-#model.add(MaxPooling1D())
-#model.add(Conv1D(128, 4, activation='relu'))
-#model.add(MaxPooling1D())
-#model.add(Conv1D(128, 5, activation='relu'))
-#model.add(MaxPooling1D())
-#model.add(Conv1D(128, 5, activation='relu'))
-#model.add(MaxPooling1D())
-model.add(Flatten())
-model.add(Dense(32, activation='relu'))
-model.add(Dense(2, activation='relu'))
-model.summary()
-sgd = optimizers.SGD()
-adam = optimizers.Adam()
-model.compile(optimizer=sgd, loss="categorical_crossentropy", metrics=['accuracy'])
-history = model.fit(trainX, trainY, verbose=1, validation_split=0.2, epochs=10)
 
-'''
-# paper's network
+# Schrider's network
 
-batch_size = 3
 ksize = 2
 l2_lambda = 0.0001
 
@@ -115,9 +87,9 @@ model.add(Flatten())
     
 model.add(Dense(256, activation='relu', kernel_initializer='normal',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
 model.add(Dropout(0.25))
-model.add(Dense(2, activation='softmax'))
+model.add(Dense(3, activation='softmax'))
     
-model.compile(loss=keras.losses.binary_crossentropy,
+model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=keras.optimizers.Adam(),
                   metrics=['accuracy'])
 print(model.summary())
@@ -127,6 +99,9 @@ history = model.fit(trainX, trainY, batch_size=64,
         verbose=1,
         validation_split=0.2)
 
+model.save('c_bn_ns_model.hdf5')
+model.save_weights('c_bn_ns_weights.hdf5')
+
 # confusion matrix on the test set
 num_samples, n2, L2 = testX.shape
 testX = np.reshape(testX,(-1,n2,L2))
@@ -135,7 +110,6 @@ predictions = model.predict_classes(testX)
 #true_labels = np.reshape(testY,(num_samples)) 
 true_labels = testY
 orig_labels = np.unique(testY,axis=0)
-print("pred type:",type(predictions[0]),"true type:",type(true_labels[0]))
 '''
 print("\n\n**********************************")
 confuse = defaultdict(lambda: defaultdict(int))
@@ -166,7 +140,7 @@ print('Accuracy (model):',acc)
 print("\n**********************************")
 
 # save pred vs true to file
-with open("predVStrue8.txt", "w") as f:
+with open("predVStrue9.txt", "w") as f:
   for n in range(num_samples):
     line = str(true_labels[n]) + ":" + str(predictions[n]) + "\n"
     f.write(line)
