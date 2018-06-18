@@ -134,6 +134,9 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
         S_list.append(S_map[region])
         var_list.append(var_map[region])
 
+    return D_list, bp_list, d_list, pi_list, S_list, var_list
+
+def plot_D(D_list, bp_list, d_list, pi_list, S_list, var_list):   
     print_list = [D_list, bp_list, d_list, pi_list, S_list, var_list]
     print("D = %f" % np.average(np.array(D_list)))
     print("pi = %f" % np.average(np.array(pi_list)))
@@ -164,7 +167,7 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
     plt.savefig('figs/tajimas_d_' + input_string.replace(" ","_") + '.png')
     plt.show()
     plt.close()
- 
+
     # # Plot of pi, the average number of pairwise differences
     # plt.figure(2,figsize=(14,8))
     # plt.plot(bp_list, pi_list, '-ro')

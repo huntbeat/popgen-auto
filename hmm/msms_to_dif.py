@@ -95,7 +95,6 @@ def msms_to_dif(input_file, length):
             dif_string_list[idx1] = dif_string
         for i in range(prev_pos, length):
             SEQ_D += "0"
-        import pdb; pdb.set_trace()
         return input_param, SEQ_D, trueTMRCA
 
 def main():

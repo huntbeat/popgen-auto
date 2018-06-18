@@ -121,3 +121,7 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 - Finding S, pi, SFS, etc. summary statistics for msms simulator to plot
 
 - Discuss hmm output results
+
+- Add a bottleneck in the middle, shorter time interval, bottleneck to a place where the resolution is high
+
+- -SAA 1000 add strength to natural selection
