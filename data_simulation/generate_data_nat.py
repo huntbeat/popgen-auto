@@ -94,7 +94,10 @@ constant_matrices = []
 for i in range(CONSTANT_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7)
-  tree = tree_sequence.first()
+  trees = tree_sequence.trees()
+  num_S = 0
+  for tree in trees:
+      num_S += tree.num_mutations
   genotypes = uniform_mutation_count(tree_sequence,NUM_SITES)
   constant_matrices.append(genotypes)
   D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
