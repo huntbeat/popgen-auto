@@ -99,6 +99,7 @@ for i in range(CONSTANT_SIZE):
   genotypes = uniform_mutation_count(tree_sequence, NUM_SITES)
   constant_matrices.append(genotypes)
   D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
+  import pdb; pdb.set_trace()
 
 #   if i % 100 == 0:
 #     print(i)

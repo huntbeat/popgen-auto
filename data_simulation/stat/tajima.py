@@ -164,6 +164,8 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
     plt.savefig('figs/tajimas_d_' + input_string.replace(" ","_") + '.png')
     plt.show()
     plt.close()
+
+    import pdb; pdb.set_trace()
  
     # # Plot of pi, the average number of pairwise differences
     # plt.figure(2,figsize=(14,8))
