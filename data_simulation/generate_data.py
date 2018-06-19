@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 from natsel_fcns import parse_natsel, uniform_natsel
 
-CONSTANT_SIZE = 100
-BOTTLENECK_SIZE = 100
+CONSTANT_SIZE = 10000
+BOTTLENECK_SIZE = 10000
 NATSELECT_SIZE = 50000
 D_list = []
 NUM_SITES = 100 # use count_data.py to find a number
@@ -95,7 +95,7 @@ for i in range(CONSTANT_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7)
   tree = tree_sequence.first()
-  genotypes = uniform_mutation_count(tree_sequence,NUM_SITES)
+  genotypes = uniform_mutation_count(tree_sequence, NUM_SITES)
   constant_matrices.append(genotypes)
   D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
 
@@ -125,7 +125,7 @@ for j in range(BOTTLENECK_SIZE):
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7, \
       demographic_events=size_change_lst)
   tree = tree_sequence.first()
-  genotypes = uniform_mutation_count(tree_sequence,NUM_SITES)
+  genotypes = uniform_mutation_count(tree_sequence, NUM_SITES)
   bottleneck_matrices.append(genotypes)
   D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
 
@@ -136,20 +136,13 @@ for j in range(BOTTLENECK_SIZE):
 # print(bottleneck_matrices[0][10])
 # print(bottleneck_matrices[0][20],"\n")
 
-######## NATURAL SELECTION #########
-
-unpadded_ns = parse_natsel('/scratch/nhoang1/simNatK.txt',25)
-natselect_matrices = uniform_natsel(unpadded_ns, NUM_SITES)
-nat_D_list = parse_msms_nn('/scratch/nhoang1/simNatK.txt')
-D_list.extend(nat_D_list)
-
 ####################################
 
-path = '/scratch/nhoang1/data5.hdf5'
+path = '/scratch/nhoang1/data6.hdf5'
 data_file = h5.File(path,'w')
 data_file.create_dataset("constant",data=np.array(constant_matrices))
 data_file.create_dataset("bottleneck",data=np.array(bottleneck_matrices))
-data_file.create_dataset("naturalselection",data=np.array(natselect_matrices))
+#data_file.create_dataset("naturalselection",data=np.array(natselect_matrices))
 
 lower_third, upper_third = find_thirds(D_list)
 print(lower_third, upper_third)
@@ -159,10 +152,10 @@ constant_output = np.zeros((CONSTANT_SIZE,6), dtype='int32')
 constant_output[:,0] = 1
 bottleneck_output = np.zeros((BOTTLENECK_SIZE,6), dtype='int32')
 bottleneck_output[:,1] = 1
-natselect_output = np.zeros((NATSELECT_SIZE,6), dtype='int32')
-natselect_output[:,2] = 1
-output = np.concatenate((constant_output,bottleneck_output,natselect_output))
-for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
+#natselect_output = np.zeros((NATSELECT_SIZE,6), dtype='int32')
+#natselect_output[:,2] = 1
+output = np.concatenate((constant_output,bottleneck_output))
+for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE):
     if D_list[i] < lower_third:
         output[:,3] = 1
     elif D_list[i] < upper_third:
