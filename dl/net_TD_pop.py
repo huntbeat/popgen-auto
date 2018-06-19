@@ -87,7 +87,7 @@ model.add(Flatten())
     
 model.add(Dense(256, activation='relu', kernel_initializer='normal',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
 model.add(Dropout(0.25))
-model.add(Dense(3, activation='softmax'))
+model.add(Dense(6, activation='softmax'))
     
 model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=keras.optimizers.Adam(),
@@ -99,8 +99,8 @@ history = model.fit(trainX, trainY, batch_size=64,
         verbose=1,
         validation_split=0.2)
 
-model.save('c_bn_ns_model.hdf5')
-model.save_weights('c_bn_ns_weights.hdf5')
+model.save('TD_cbnns_model.hdf5')
+model.save_weights('TD_cbnns_weights.hdf5')
 
 # confusion matrix on the test set
 num_samples, n2, L2 = testX.shape
@@ -140,7 +140,7 @@ print('Accuracy (model):',acc)
 print("\n**********************************")
 
 # save pred vs true to file
-with open("predVStrue9.txt", "w") as f:
+with open("predVStrue.txt", "w") as f:
   for n in range(num_samples):
     line = str(true_labels[n]) + ":" + str(predictions[n]) + "\n"
     f.write(line)

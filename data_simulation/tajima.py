@@ -15,7 +15,8 @@ import sys
 # READ VCF FILE
 #---------------
 
-def parse_msms(filename):
+def parse_msms_nn(filename):
+    final_D_list = []
     """Read msms file line by line, parsing out SNP information"""
     with open(filename, 'r') as msms_file:
         input_string = next(msms_file)
@@ -32,7 +33,7 @@ def parse_msms(filename):
         seg_string = next(msms_file)
         # segsites: 888
         total_snps = int(seg_string.split(" ")[1])
-        window = 50
+        window = 100000
         genomic_locations = []
 
         # Start and end
@@ -55,7 +56,75 @@ def parse_msms(filename):
         seq_string_all = []
         for line in msms_file:
             line = line.replace("\n", "")
-            if line != "":
+            if line != "//" or line != "":
+                seq_string_all.append(line)
+            else:
+                pos_set = set()
+                idx_pos_list = []
+                for idx, pos_string in enumerate(pos_string_list):
+                    pos = int(float(pos_string)*total_length)
+                    while pos in pos_set:
+                        pos += 1
+                    pos_set.add(pos)
+                    idx_pos_list.append((idx,pos))
+                for idx_pos in idx_pos_list:
+                    idx, pos = idx_pos
+                    genomic_locations.append(pos)
+                    num = 0 # number of those that have the SNP
+                    bp_buckets[pos // window * window].append(pos)
+                    for indiv_seq_string in seq_string_all:
+                        if indiv_seq_string[idx] == "1":
+                                num += 1
+                    num_indivs[pos] = num
+                    D_list, bp_list, d_list, pi_list, S_list, var_list = calculate_D(bp_buckets, genomic_locations, num_indivs, sample_size, window, input_string, pos_start, pos_end)
+                    final_D_list.extend(D_list)
+        return final_D_list
+
+def parse_msms(filename):
+    """Read msms file line by line, parsing out SNP information"""
+    with open(filename, 'r') as msms_file:
+        input_string = next(msms_file)
+        input_param = input_string.replace("\n","").split(" ")[:-2]
+        input_string = "".join(input_param)
+        # ms -N 10000 2 1 -t 4000 -r 4000 1000000 -eN 0.01 0.05 -eN 0.0375 0.5 -eN 1.25 1
+        Ne = int(input_param[2])
+        sample_size = int(input_param[3])
+        total_length = int(input_param[9])
+
+        next(msms_file) # rand number
+        next(msms_file) # ""
+        next(msms_file) # //
+        seg_string = next(msms_file)
+        # segsites: 888
+        total_snps = int(seg_string.split(" ")[1])
+        window = 100000
+        genomic_locations = []
+
+        # Start and end
+        pos_start = 0
+        pos_end = total_length
+
+        # We want to look at base pair regions in the genome instead of grouping
+        # together SNPS (which could be across a long region), because related genes
+        # are next to each other
+        # If a SNP falls into one of these regions, save that there.
+        # bp_regions = list(range(112131266,112352266,1000))
+        bp_regions = list(range(pos_start // window * window, pos_end // window * window + window, window))
+
+        bp_buckets = dict((el,[]) for el in bp_regions)
+        num_indivs = {} # {k: genomic_location, v: num_indivs}
+
+        pos_string_list = next(msms_file).split(" ")[1:-1]
+        # positions: 0.00141 0.00249 0.00277 0.00328 0.00450 0.00453
+        # ["0.00141", "0.00249", ...]
+        seq_string_all = []
+        for line in msms_file:
+            line = line.replace("\n", "")
+            if line == "//":
+                continue
+            if line == "":
+                break
+            else:
                 seq_string_all.append(line)
         pos_set = set()
         idx_pos_list = []
@@ -136,7 +205,7 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
 
     return D_list, bp_list, d_list, pi_list, S_list, var_list
 
-def plot_D(D_list, bp_list, d_list, pi_list, S_list, var_list):   
+def plot_D(D_list, bp_list, d_list, pi_list, S_list, var_list):
     print_list = [D_list, bp_list, d_list, pi_list, S_list, var_list]
     print("D = %f" % np.average(np.array(D_list)))
     print("pi = %f" % np.average(np.array(pi_list)))

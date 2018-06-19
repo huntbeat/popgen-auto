@@ -6,13 +6,15 @@ import msprime
 import h5py as h5
 import numpy as np
 from math import sqrt
-from tajima import parse_msms, calculate_D
+from tajima import parse_msms_nn
+from scipy.stats import gaussian_kde
+import matplotlib.pyplot as plt
 
 from natsel_fcns import parse_natsel, uniform_natsel
 
-CONSTANT_SIZE = 1000
-BOTTLENECK_SIZE = 1000
-NATSELECT_SIZE = 1000
+CONSTANT_SIZE = 100
+BOTTLENECK_SIZE = 100
+NATSELECT_SIZE = 50000
 D_list = []
 NUM_SITES = 100 # use count_data.py to find a number
 
@@ -73,10 +75,6 @@ def find_thirds(D_list):
     sim_values = np.array(D_list)
     x_grid = np.linspace(min(sim_values), max(sim_values), NUM_GRID)
     dist = kde_scipy(sim_values, x_grid, BANDWIDTH)
-    def kde_scipy(x, x_grid, bandwidth, **kwargs):
-       """Kernel Density Estimation with Scipy"""
-       kde = gaussian_kde(x, bw_method=bandwidth, **kwargs)
-       return kde.evaluate(x_grid)
     plt.figure(1)
     plt.plot(x_grid, dist)
     plt.show()
@@ -84,6 +82,11 @@ def find_thirds(D_list):
     lower_third_idx = int(NUM_GRID / 3)
     upper_third_idx = 2 * lower_third_idx
     return D_list[lower_third_idx], D_list[upper_third_idx]
+
+def kde_scipy(x, x_grid, bandwidth, **kwargs):
+   """Kernel Density Estimation with Scipy"""
+   kde = gaussian_kde(x, bw_method=bandwidth, **kwargs)
+   return kde.evaluate(x_grid)
 
 ############ CONSTANT ############
 
@@ -96,13 +99,13 @@ for i in range(CONSTANT_SIZE):
   constant_matrices.append(genotypes)
   D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
 
-  if i % 100 == 0:
-    print(i)
-
-
-print(constant_matrices[0][0])
-print(constant_matrices[0][10])
-print(constant_matrices[0][20],"\n")
+#   if i % 100 == 0:
+#     print(i)
+#
+#
+# print(constant_matrices[0][0])
+# print(constant_matrices[0][10])
+# print(constant_matrices[0][20],"\n")
 
 ############ BOTTLENECK ############
 
@@ -126,19 +129,18 @@ for j in range(BOTTLENECK_SIZE):
   bottleneck_matrices.append(genotypes)
   D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
 
-  if j % 100 == 0:
-    print(j+CONSTANT_SIZE)
-
-print(bottleneck_matrices[0][0])
-print(bottleneck_matrices[0][10])
-print(bottleneck_matrices[0][20],"\n")
+#   if j % 100 == 0:
+#     print(j+CONSTANT_SIZE)
+#
+# print(bottleneck_matrices[0][0])
+# print(bottleneck_matrices[0][10])
+# print(bottleneck_matrices[0][20],"\n")
 
 ######## NATURAL SELECTION #########
 
 unpadded_ns = parse_natsel('/scratch/nhoang1/simNatK.txt',25)
 natselect_matrices = uniform_natsel(unpadded_ns, NUM_SITES)
-bp_buckets, genomic_locations, num_indivs, sample_size, window, input_string, pos_start, pos_end = parse_msms('/scratch/nhoang1/simNatK.txt')
-nat_D_list, bp_list, d_list, pi_list, S_list, var_list = calculate_D(bp_buckets, genomic_locations, num_indivs, sample_size, window, input_string, pos_start, pos_end)
+nat_D_list = parse_msms_nn('/scratch/nhoang1/simNatK.txt')
 D_list.extend(nat_D_list)
 
 ####################################
@@ -160,7 +162,7 @@ bottleneck_output[:,1] = 1
 natselect_output = np.zeros((NATSELECT_SIZE,6), dtype='int32')
 natselect_output[:,2] = 1
 output = np.concatenate((constant_output,bottleneck_output,natselect_output))
-for i in range(CONSTANT_SIZE+BOTTLENECK_SIZE+NATSELECT_SIZE):
+for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
     if D_list[i] < lower_third:
         output[:,3] = 1
     elif D_list[i] < upper_third:

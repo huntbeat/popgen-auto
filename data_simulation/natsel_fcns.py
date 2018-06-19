@@ -17,7 +17,6 @@ def parse_natsel(filename, num_indivs):
 
     if num_sites == 0: # no seg sites
       matrices.append(np.zeros((num_samples,0), dtype='int32'))
-      print(count)
       count += 1
     else:
       matrix = []
@@ -29,7 +28,6 @@ def parse_natsel(filename, num_indivs):
       assert(matrix[0].shape[0]==num_sites)
       assert(matrix.shape[0]==num_indivs)
       matrices.append(matrix)
-      print(count)
       count += 1
 
   file_.close()
@@ -43,7 +41,7 @@ def parse_natsel(filename, num_indivs):
       over100 += 1
   print("over 100 sites:",over100)
   return matrices
-  
+
 def uniform_natsel(data, length):
   print("padding sequence matrices")
   uniform_data = []
@@ -59,4 +57,3 @@ def uniform_natsel(data, length):
       padded_mat = np.concatenate((zeros[:,:half],matrix,zeros[:,half:]),axis=1)
       uniform_data.append(padded_mat)
   return np.array(uniform_data)
-
