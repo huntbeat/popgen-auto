@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 from natsel_fcns import parse_natsel, uniform_natsel
 
-CONSTANT_SIZE = 10000
-BOTTLENECK_SIZE = 10000
+CONSTANT_SIZE = 1000
+BOTTLENECK_SIZE = 1000
 NATSELECT_SIZE = 50000
 D_list = []
 NUM_SITES = 100 # use count_data.py to find a number
@@ -64,8 +64,9 @@ def find_D(num_mutations, pairwise_diversity, n):
         var = sqrt(e_1 * S + e_2 * S * (S - 1))
         D = d / var
     else:
+        d = 0
         D = 0
-    return D
+    return d
 
 ##################################
 '''Find interval that subdivides D into thirds'''
@@ -138,7 +139,7 @@ for j in range(BOTTLENECK_SIZE):
 
 ####################################
 
-path = '/scratch/nhoang1/data6.hdf5'
+path = 'data6.hdf5'
 data_file = h5.File(path,'w')
 data_file.create_dataset("constant",data=np.array(constant_matrices))
 data_file.create_dataset("bottleneck",data=np.array(bottleneck_matrices))
@@ -156,13 +157,14 @@ bottleneck_output[:,1] = 1
 #natselect_output[:,2] = 1
 output = np.concatenate((constant_output,bottleneck_output))
 for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE):
-    if D_list[i] < lower_third:
-        output[:,3] = 1
-    elif D_list[i] < upper_third:
-        output[:,4] = 1
+    if D_list[i] <= lower_third:
+        output[i,3] = 1
+    elif D_list[i] <= upper_third:
+        output[i,4] = 1
     else:
-        output[:,5] = 1
+        output[i,5] = 1
 print("output shape:",output.shape)
+import pdb; pdb.set_trace()
 data_file.create_dataset("output",data=output)
 
 data_file.close()
