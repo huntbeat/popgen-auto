@@ -6,14 +6,14 @@ import msprime
 import h5py as h5
 import numpy as np
 from math import sqrt
-from tajima import parse_msms_nn
+from tajima import *
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
 
 from natsel_fcns import parse_natsel, uniform_natsel
 
-CONSTANT_SIZE = 100
-BOTTLENECK_SIZE = 100
+CONSTANT_SIZE = 1000
+BOTTLENECK_SIZE = 1000
 NATSELECT_SIZE = 50000
 D_list = []
 NUM_SITES = 100 # use count_data.py to find a number
@@ -138,14 +138,15 @@ for j in range(BOTTLENECK_SIZE):
 
 ######## NATURAL SELECTION #########
 
-unpadded_ns = parse_natsel('/scratch/nhoang1/simNatK.txt',25)
+unpadded_ns = parse_natsel('simNatK.txt',25)
 natselect_matrices = uniform_natsel(unpadded_ns, NUM_SITES)
-nat_D_list = parse_msms_nn('/scratch/nhoang1/simNatK.txt')
+nat_D_list = parse_msms('simNatK.txt')
 D_list.extend(nat_D_list)
+import pdb; pdb.set_trace()
 
 ####################################
 
-path = '/scratch/nhoang1/data5.hdf5'
+path = 'data5.hdf5'
 data_file = h5.File(path,'w')
 data_file.create_dataset("constant",data=np.array(constant_matrices))
 data_file.create_dataset("bottleneck",data=np.array(bottleneck_matrices))
@@ -163,12 +164,12 @@ natselect_output = np.zeros((NATSELECT_SIZE,6), dtype='int32')
 natselect_output[:,2] = 1
 output = np.concatenate((constant_output,bottleneck_output,natselect_output))
 for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
-    if D_list[i] < lower_third:
-        output[:,3] = 1
-    elif D_list[i] < upper_third:
-        output[:,4] = 1
+    if D_list[i] <= lower_third:
+        output[i,3] = 1
+    elif D_list[i] <= upper_third:
+        output[i,4] = 1
     else:
-        output[:,5] = 1
+        output[i,5] = 1
 print("output shape:",output.shape)
 data_file.create_dataset("output",data=output)
 
