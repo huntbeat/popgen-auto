@@ -14,7 +14,7 @@ from natsel_fcns import parse_natsel, uniform_natsel
 
 CONSTANT_SIZE = 1000
 BOTTLENECK_SIZE = 1000
-NATSELECT_SIZE = 50000
+NATSELECT_SIZE = 1000
 D_list = []
 NUM_SITES = 100 # use count_data.py to find a number
 
@@ -69,19 +69,19 @@ def find_D(num_mutations, pairwise_diversity, n):
 
 ##################################
 '''Find interval that subdivides D into thirds'''
-def find_thirds(D_list):
-    NUM_GRID   = len(D_list)    # number of x-points to use for kernel density smoothing
+def find_thirds(long_list):
+    NUM_GRID   = len(long_list)    # number of x-points to use for kernel density smoothing
     BANDWIDTH  = 0.3     # how much to smooth distribution
-    sim_values = np.array(D_list)
+    sim_values = np.array(long_list)
     x_grid = np.linspace(min(sim_values), max(sim_values), NUM_GRID)
     dist = kde_scipy(sim_values, x_grid, BANDWIDTH)
     plt.figure(1)
     plt.plot(x_grid, dist)
     plt.show()
-    sorted_D = sorted(D_list)
+    sorted_D = sorted(long_list)
     lower_third_idx = int(NUM_GRID / 3)
     upper_third_idx = 2 * lower_third_idx
-    return D_list[lower_third_idx], D_list[upper_third_idx]
+    return long_list[lower_third_idx], long_list[upper_third_idx]
 
 def kde_scipy(x, x_grid, bandwidth, **kwargs):
    """Kernel Density Estimation with Scipy"""
@@ -94,10 +94,13 @@ constant_matrices = []
 for i in range(CONSTANT_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7)
-  tree = tree_sequence.first()
+  trees = tree_sequence.trees()
+  big_S = 0
+  for tree in trees:
+      big_S += tree.num_mutations
   genotypes = uniform_mutation_count(tree_sequence,NUM_SITES)
   constant_matrices.append(genotypes)
-  D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
+  D_list.append(find_D(big_S, tree_sequence.pairwise_diversity(), 25))
 
 #   if i % 100 == 0:
 #     print(i)
@@ -124,10 +127,13 @@ for j in range(BOTTLENECK_SIZE):
   tree_sequence = msprime.simulate(sample_size=25, Ne=10000, \
       length=3000, mutation_rate = 1e-7, recombination_rate=1e-7, \
       demographic_events=size_change_lst)
-  tree = tree_sequence.first()
+  trees = tree_sequence.trees()
+  big_S = 0
+  for tree in trees:
+      big_S += tree.num_mutations
   genotypes = uniform_mutation_count(tree_sequence,NUM_SITES)
   bottleneck_matrices.append(genotypes)
-  D_list.append(find_D(tree.num_mutations, tree_sequence.pairwise_diversity(), 25))
+  D_list.append(find_D(big_S, tree_sequence.pairwise_diversity(), 25))
 
 #   if j % 100 == 0:
 #     print(j+CONSTANT_SIZE)
@@ -138,15 +144,14 @@ for j in range(BOTTLENECK_SIZE):
 
 ######## NATURAL SELECTION #########
 
-unpadded_ns = parse_natsel('simNatK.txt',25)
+unpadded_ns = parse_natsel('/scratch/nhoang1/simNatK.txt',25)
 natselect_matrices = uniform_natsel(unpadded_ns, NUM_SITES)
-nat_D_list = parse_msms('simNatK.txt')
+nat_D_list = parse_msms('/scratch/nhoang1/simNatK.txt', NATSELECT_SIZE)
 D_list.extend(nat_D_list)
-import pdb; pdb.set_trace()
 
 ####################################
 
-path = 'data5.hdf5'
+path = '/scratch/nhoang1/data7.hdf5'
 data_file = h5.File(path,'w')
 data_file.create_dataset("constant",data=np.array(constant_matrices))
 data_file.create_dataset("bottleneck",data=np.array(bottleneck_matrices))
@@ -155,22 +160,26 @@ data_file.create_dataset("naturalselection",data=np.array(natselect_matrices))
 lower_third, upper_third = find_thirds(D_list)
 print(lower_third, upper_third)
 
-# create output array
-constant_output = np.zeros((CONSTANT_SIZE,6), dtype='int32')
+# create output arrays
+constant_output = np.zeros((CONSTANT_SIZE,3), dtype='int32')
 constant_output[:,0] = 1
-bottleneck_output = np.zeros((BOTTLENECK_SIZE,6), dtype='int32')
+bottleneck_output = np.zeros((BOTTLENECK_SIZE,3), dtype='int32')
 bottleneck_output[:,1] = 1
-natselect_output = np.zeros((NATSELECT_SIZE,6), dtype='int32')
+natselect_output = np.zeros((NATSELECT_SIZE,3), dtype='int32')
 natselect_output[:,2] = 1
-output = np.concatenate((constant_output,bottleneck_output,natselect_output))
+pop_output = np.concatenate((constant_output,bottleneck_output,natselect_output))
+print("pop output shape:",pop_output.shape)
+data_file.create_dataset("pop_output",data=pop_output)
+
+TD_output = np.zeros((CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE,3), dtype='int32')
 for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
     if D_list[i] <= lower_third:
-        output[i,3] = 1
+        TD_output[i,0] = 1
     elif D_list[i] <= upper_third:
-        output[i,4] = 1
+        TD_output[i,1] = 1
     else:
-        output[i,5] = 1
-print("output shape:",output.shape)
-data_file.create_dataset("output",data=output)
+        TD_output[i,2] = 1
+print("TD output shape:",TD_output.shape)
+data_file.create_dataset("TD_output",data=TD_output)
 
 data_file.close()

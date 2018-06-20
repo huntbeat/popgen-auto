@@ -8,148 +8,125 @@ import sys
 import os
 
 import keras
-from keras.models import Sequential 
-from keras.layers import Dense, Conv1D, Conv2D, Flatten, MaxPooling1D, Dropout, AveragePooling1D
+from keras.models import Sequential, Model
+from keras.layers import Dense, Conv1D, Conv2D, Flatten, MaxPooling1D, Dropout, AveragePooling1D, Input
 from keras import optimizers
 
-# fetch data 
+# fetch data
 file_ = sys.argv[1]
 path = '/scratch/nhoang1/'+file_
 with h5py.File(path,'r') as f:
   constant_h5 = f.get('constant')
   bottleneck_h5 = f.get('bottleneck')
   natselect_h5 = f.get('naturalselection')
-  output_h5 = f.get('output')
+  pop_h5 = f.get('pop_output')
+  TD_h5 = f.get('TD_output')
   constant = np.array(constant_h5)
   bottleneck = np.array(bottleneck_h5)
   natselect = np.array(natselect_h5)
-  #output = np.array(output_h5, dtype='int32')
-  output = np.array(output_h5)
+  pops = np.array(pop_h5)
+  TDs = np.array(TD_h5)
 
-#constant = np.zeros_like(constant, dtype='int32')
-#bottleneck = np.ones_like(bottleneck, dtype='int32')
-
-data = np.concatenate((constant,bottleneck,natselect))
-#output = np.reshape(output,(output.shape[0]))
+seqs = np.concatenate((constant,bottleneck,natselect)) 
 
 # shuffle data before training
-data_shape_before = data.shape
-output_shape_before = output.shape
-s = np.arange(output.shape[0])
+seqs_shape_before = seqs.shape
+pop_shape_before = pops.shape
+TD_shape_before = TDs.shape
+s = np.arange(TDs.shape[0])
 np.random.shuffle(s)
-data = data[s]
-output = output[s]
-assert(data_shape_before == data.shape)
-assert(output_shape_before == output.shape)
+seqs = seqs[s]
+pops = pops[s]
+TDs = TDs[s]
+#assert(seqs_shape_before == seqs.shape)
+assert(pop_shape_before == pops.shape)
+assert(TD_shape_before == TDs.shape)
 
 # split into train/validation and test
-si = int(output.shape[0]*0.8)
-trainX = data[:si]
-trainY = output[:si]
-testX = data[si:]
-testY = output[si:]
+si = int(TDs.shape[0]*0.8)
+xtrain = seqs[:si]
+ytrain_pop = pops[:si]
+ytrain_TD = TDs[:si]
+xtest = seqs[si:]
+ytest_pop = pops[si:]
+ytest_TD = TDs[si:]
 
 # stats
-print("data shape:",data.shape)
-print("single num type:",type(data[0][0][0]))
-print("output shape:",output.shape)
-print("output type:",type(output[0]))
-print("num train:",trainX.shape[0],",num test:",testX.shape[0])
+print("data shape:",seqs.shape)
+print("single num type:",type(seqs[0][0][0]))
+print("pop output shape:",pops.shape)
+print("TD output shape:",TDs.shape)
+print("pop output type:",type(pops[0]))
+print("TD output type:",type(TDs[0]))
+print("num train:",xtrain.shape[0],",num test:",xtest.shape[0])
 
-# Schrider's network
+# Schrider's network, modified for multi output
 
 ksize = 2
 l2_lambda = 0.0001
+n, L = xtrain.shape[1:]
 
-n, L = trainX.shape[1:]
-model = Sequential()
-model.add(Conv1D(128*2, kernel_size=ksize,
-                 activation='relu',
-                 input_shape=(n,L),
-                 kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(MaxPooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
+seq_input = Input(shape=(n,L))
+conv1 = Conv1D(128*2, kernel_size=ksize, activation='relu', kernel_regularizer=keras.regularizers.l2(l2_lambda))(seq_input)
+conv2 = Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda))(conv1)
+maxpool1 = MaxPooling1D(pool_size=ksize)(conv2)
+dropout1 = Dropout(0.2)(maxpool1)
+conv3 = Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda))(dropout1)
+maxpool2 = MaxPooling1D(pool_size=ksize)(conv3)
+dropout2 = Dropout(0.2)(maxpool2)
+conv4 = Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda))(dropout2)
+avgpool1 = AveragePooling1D(pool_size=ksize)(conv4)
+dropout3 = Dropout(0.2)(avgpool1)
+conv5 = Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda))(dropout3)
+dropout4 = Dropout(0.2)(conv5)
+flatten1 = Flatten()(dropout4)
+dense1 = Dense(256, activation='relu', kernel_initializer='normal',kernel_regularizer=keras.regularizers.l2(l2_lambda))(flatten1)
+dropout5 = Dropout(0.25)(dense1)
+pop_output = Dense(3, activation='softmax', name='pop')(dropout5)
+TD_output = Dense(3, activation='softmax', name='TD')(dropout5)
 
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(MaxPooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
-
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(AveragePooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
-
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-#model.add(AveragePooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
-
-model.add(Flatten())
-    
-model.add(Dense(256, activation='relu', kernel_initializer='normal',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(Dropout(0.25))
-model.add(Dense(6, activation='softmax'))
-    
-model.compile(loss=keras.losses.categorical_crossentropy,
+model = Model(inputs=[seq_input], outputs=[pop_output,TD_output])
+model.compile(loss=keras.losses.binary_crossentropy,
                   optimizer=keras.optimizers.Adam(),
                   metrics=['accuracy'])
 print(model.summary())
 
-history = model.fit(trainX, trainY, batch_size=64,
+history = model.fit([xtrain], [ytrain_pop, ytrain_TD], batch_size=64,
         epochs=10,
         verbose=1,
         validation_split=0.2)
 
-model.save('TD_cbnns_model.hdf5')
-model.save_weights('TD_cbnns_weights.hdf5')
+model.save('TD_pop_model.hdf5')
+model.save_weights('TD_pop_weights.hdf5')
+
+loss, pop_loss, TD_loss, pop_acc, TD_acc = model.evaluate(x=xtest,y=[ytest_pop,ytest_TD])
+print("pop accuracy:", pop_acc)
+print("TD accuracy:", TD_acc)
 
 # confusion matrix on the test set
-num_samples, n2, L2 = testX.shape
-testX = np.reshape(testX,(-1,n2,L2))
-predictions = model.predict_classes(testX)
-#predictions = np.reshape(predictions,(num_samples))
-#true_labels = np.reshape(testY,(num_samples)) 
-true_labels = testY
-orig_labels = np.unique(testY,axis=0)
 '''
 print("\n\n**********************************")
-confuse = defaultdict(lambda: defaultdict(int))
-for lamodel in orig_labels:
-  for lab2 in orig_labels:
-    confuse[lamodel][lab2] = 0
-for i in range(len(predictions)):
-  confuse[true_labels[i]][predictions[i]] += 1
-mat_str = "\n\t Prediction \n%11s" % sorted(confuse.keys())[0]
-for lab in sorted(confuse.keys())[1:]:
-  mat_str += "%6s" % lab
-mat_str += "\n"
-for row in sorted(confuse.keys()):
-  mat_str += "%5s " % row
-  for col in sorted(confuse[row].keys()):
-    mat_str += "%5d " % confuse[row][col]
-  mat_str += "\n"
-print(mat_str)
-
-# print acccuracy
-correct = 0
-for t,p in zip(true_labels,predictions):
-  if t == p:
-    correct += 1'''
-loss, acc = model.evaluate(testX,testY)
-#print('Accuracy (manual):',correct/predictions.shape[0])
-print('Accuracy (model):',acc)
 print("\n**********************************")
-
+'''
 # save pred vs true to file
-with open("predVStrue.txt", "w") as f:
+num_samples, n2, L2 = xtest.shape
+predictions = model.predict(xtest)
+pop_preds = predictions[0].argmax(axis=-1)
+TD_preds = predictions[1].argmax(axis=-1)
+with open("preds_TD_pop.txt", "w") as f:
   for n in range(num_samples):
-    line = str(true_labels[n]) + ":" + str(predictions[n]) + "\n"
+    line = str(ytest_pop[n]) + "," + str(ytest_TD[n]) + ":" + str(pop_preds[n]) + "," + str(TD_preds[n]) + "\n"
     f.write(line)
 
 # accuracy plot
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
+plt.plot(history.history['pop_acc'], marker='v')
+plt.plot(history.history['TD_acc'], marker='o')
+plt.plot(history.history['val_pop_acc'], marker='v')
+plt.plot(history.history['val_TD_acc'], marler='o')
+plt.title('Model Training Accuracy')
 plt.ylabel('accuracy')
+plt.ylim(0,1)
 plt.xlabel('epoch')
-plt.legend(['train', 'validation'], loc='upper left')
+plt.xlim(0, 10)
+plt.legend(['train pop', 'train TD', 'val pop', 'val TD'], loc='lower right')
 plt.show()

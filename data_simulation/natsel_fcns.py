@@ -6,7 +6,7 @@ import numpy as np
 def parse_natsel(filename, num_indivs):
   num_sites_list = []
   count = 0
-  print("parsing sequence matrices")
+  print("nat sel data: parsing sequence matrices...")
   file_ = open(filename,'r')
   lines = file_.readlines()
   matrices = []
@@ -31,6 +31,7 @@ def parse_natsel(filename, num_indivs):
       count += 1
 
   file_.close()
+  print("nat sel data: stats")
   print("min sites:",min(num_sites_list))
   print("max sites:",max(num_sites_list))
   print("avg sites:",sum(num_sites_list)/len(num_sites_list))
@@ -43,7 +44,7 @@ def parse_natsel(filename, num_indivs):
   return matrices
 
 def uniform_natsel(data, length):
-  print("padding sequence matrices")
+  print("nat sel data: padding sequence matrices...")
   uniform_data = []
   for matrix in data:
     h, w = matrix.shape
