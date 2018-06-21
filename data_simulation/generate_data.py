@@ -174,10 +174,30 @@ print("pop output shape:",pop_output.shape)
 data_file.create_dataset("pop_output",data=pop_output)
 
 TD_output = np.zeros((CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE,3), dtype='int32')
+# FOR TAJIMA's D
 for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
     if D_list[i] <= lower_third:
         TD_output[i,0] = 1
     elif D_list[i] <= upper_third:
+        TD_output[i,1] = 1
+    else:
+        TD_output[i,2] = 1
+# FOR DUPLICATE
+TD_output = pop_output
+# FOR RANDOM
+for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
+    R = np.random.rand(1,1)[0,0]
+    if R <= (1/3):
+        TD_output[i,0] = 1
+    elif R <= (2/3):
+        TD_output[i,1] = 1
+    else:
+        TD_output[i,2] = 1
+# FOR S
+for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
+    if S_list[i] <= S_lower_third:
+        TD_output[i,0] = 1
+    elif S_list[i] <= S_upper_third:
         TD_output[i,1] = 1
     else:
         TD_output[i,2] = 1

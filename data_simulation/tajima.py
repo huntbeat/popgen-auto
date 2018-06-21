@@ -18,6 +18,7 @@ import sys
 def parse_msms(filename, num_iterations):
     """Read msms file line by line, parsing out SNP information"""
     D_list = []
+    S_list = []
     with open(filename, 'r') as msms_file:
         input_string = next(msms_file)
         input_param = input_string.replace("\n","").split(" ")[:-2]
@@ -42,6 +43,9 @@ def parse_msms(filename, num_iterations):
             # Start and end
             pos_start = 0
             pos_end = total_length
+
+            # Random S
+            S = 0
 
             # We want to look at base pair regions in the genome instead of grouping
             # together SNPS (which could be across a long region), because related genes
@@ -78,13 +82,16 @@ def parse_msms(filename, num_iterations):
                 for indiv_seq_string in seq_string_all:
                     if indiv_seq_string[idx] == "1":
                             num += 1
+                            S += 1
                 num_indivs[pos] = num
 
             D = calculate_D(bp_buckets, genomic_locations, num_indivs, sample_size, window, input_string, pos_start, pos_end)
+
             D_list.append(D)
+            S_list.append(S)
 
             _ = next(msms_file) # should be "" empty line
-        return D_list
+        return D_list, S_list
 
 def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_string, pos_start, pos_end):
 

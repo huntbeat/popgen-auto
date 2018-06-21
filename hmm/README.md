@@ -133,3 +133,17 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 - Turned HMM outputs into text outputs
 
 - Need to consider how to change HMM outputs to fit into CNN inputs
+---
+06.20.18
+
+- Translate outputs from HMM to a demographic event for training the neural net
+
+- Check how well Tajima's D predicts nat. sel., bottleneck, constant pop.size
+
+- Training-wise: Have multiple natural selection features, work with both nat. sel. and pop. change
+
+---
+06.21.18
+
+1. Sort node weights, see distribution easier
+2. Perfectly matched, perfectly mismatched, in the middle - (number of 1's in the sequence)
