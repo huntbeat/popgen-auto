@@ -17,6 +17,7 @@ BOTTLENECK_SIZE = 50000
 NATSELECT_SIZE = 50000 # restricted by prior natsel sim
 NUM_SITES = 150 # use count_data.py to find a number
 D_list = []
+S_list = []
 
 ##################################
 
@@ -60,7 +61,7 @@ def find_D(num_mutations, pairwise_diversity, n):
         b_2 = (2*(n*n + n + 3))/ (9*n *(n-1))
         c_2 = b_2 - (n+2)/(a_1 * n) + a_2 / (a_1*a_1)
         e_2 = c_2 / (a_1 * a_1 + a_2)
-
+S_list = []
         d = pi - S / a_1
         var = sqrt(e_1 * S + e_2 * S * (S - 1))
         D = d / var
@@ -148,7 +149,7 @@ for j in range(BOTTLENECK_SIZE):
 
 unpadded_ns = parse_natsel('/scratch/nhoang1/simNatK.txt',25)
 natselect_matrices = uniform_natsel(unpadded_ns, NUM_SITES)
-nat_D_list = parse_msms('/scratch/nhoang1/simNatK.txt', NATSELECT_SIZE)
+nat_D_list, nat_S_list = parse_msms('/scratch/nhoang1/simNatK.txt', NATSELECT_SIZE)
 D_list.extend(nat_D_list)
 
 ####################################
@@ -193,7 +194,7 @@ for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
         TD_output[i,1] = 1
     else:
         TD_output[i,2] = 1
-# FOR S
+# FOR S -- NOT DONE TODO
 for i in range(CONSTANT_SIZE + BOTTLENECK_SIZE + NATSELECT_SIZE):
     if S_list[i] <= S_lower_third:
         TD_output[i,0] = 1
