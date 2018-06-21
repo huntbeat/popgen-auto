@@ -29,6 +29,8 @@ def parse_natsel(filename, num_indivs):
       assert(matrix.shape[0]==num_indivs)
       matrices.append(matrix)
       count += 1
+    print(count)
+    count += 1
 
   file_.close()
   print("nat sel data: stats")
@@ -36,14 +38,15 @@ def parse_natsel(filename, num_indivs):
   print("max sites:",max(num_sites_list))
   print("avg sites:",sum(num_sites_list)/len(num_sites_list))
 
-  over100 = 0
+  over150 = 0
   for s in num_sites_list:
-    if s > 100:
-      over100 += 1
-  print("over 100 sites:",over100)
+    if s > 150:
+      over150 += 1
+  print("over 150 sites:",over150)
   return matrices
 
 def uniform_natsel(data, length):
+  count = 0
   print("nat sel data: padding sequence matrices...")
   uniform_data = []
   for matrix in data:
@@ -57,4 +60,6 @@ def uniform_natsel(data, length):
       half = int(padding_width/2)
       padded_mat = np.concatenate((zeros[:,:half],matrix,zeros[:,half:]),axis=1)
       uniform_data.append(padded_mat)
+    print(count)
+    count += 1
   return np.array(uniform_data)

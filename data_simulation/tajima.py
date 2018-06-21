@@ -15,7 +15,7 @@ import sys
 # READ VCF FILE
 #---------------
 
-def parse_msms(filename):
+def parse_msms(filename, num_iterations):
     """Read msms file line by line, parsing out SNP information"""
     D_list = []
     with open(filename, 'r') as msms_file:
@@ -26,7 +26,7 @@ def parse_msms(filename):
         Ne = int(input_param[2])
         sample_size = int(input_param[3])
         total_length = int(input_param[9])
-        num_iterations = int(input_param[4])
+        # num_iterations = int(input_param[4])
 
         next(msms_file) # rand number
         next(msms_file) # ""

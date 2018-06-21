@@ -1,20 +1,22 @@
 """ create neural network for constant, bottleneck, and natural selection"""
 
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
+from analyze_network import confusion_matrix
 from collections import defaultdict
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
 import sys
-import os
 
 import keras
-from keras.models import Sequential, Model
 from keras.layers import Dense, Conv1D, Conv2D, Flatten, MaxPooling1D, Dropout, AveragePooling1D, Input
+from keras.models import Sequential, Model
 from keras import optimizers
 
 # fetch data
-file_ = sys.argv[1]
-path = '/scratch/nhoang1/'+file_
+network_name = sys.argv[2] # filename prefix for all files created for this network 
+prefix = '/' + network_name + '/' + network_name
+data_file = sys.argv[1]
+path = '/scratch/nhoang1/'+data_file
 with h5py.File(path,'r') as f:
   constant_h5 = f.get('constant')
   bottleneck_h5 = f.get('bottleneck')
@@ -26,7 +28,6 @@ with h5py.File(path,'r') as f:
   natselect = np.array(natselect_h5)
   pops = np.array(pop_h5)
   TDs = np.array(TD_h5)
-
 seqs = np.concatenate((constant,bottleneck,natselect)) 
 
 # shuffle data before training
@@ -38,7 +39,8 @@ np.random.shuffle(s)
 seqs = seqs[s]
 pops = pops[s]
 TDs = TDs[s]
-#assert(seqs_shape_before == seqs.shape)
+assert(seqs_shape_before[0] >= seqs.shape[0]) # num samples depends on prior nat sel simulation 
+assert(seqs_shape_before[1:] == seqs.shape[1:])
 assert(pop_shape_before == pops.shape)
 assert(TD_shape_before == TDs.shape)
 
@@ -50,15 +52,6 @@ ytrain_TD = TDs[:si]
 xtest = seqs[si:]
 ytest_pop = pops[si:]
 ytest_TD = TDs[si:]
-
-# stats
-print("data shape:",seqs.shape)
-print("single num type:",type(seqs[0][0][0]))
-print("pop output shape:",pops.shape)
-print("TD output shape:",TDs.shape)
-print("pop output type:",type(pops[0]))
-print("TD output type:",type(TDs[0]))
-print("num train:",xtrain.shape[0],",num test:",xtest.shape[0])
 
 # Schrider's network, modified for multi output
 
@@ -96,37 +89,42 @@ history = model.fit([xtrain], [ytrain_pop, ytrain_TD], batch_size=64,
         verbose=1,
         validation_split=0.2)
 
-model.save('TD_pop_model.hdf5')
-model.save_weights('TD_pop_weights.hdf5')
+model.save(prefix + '_model.hdf5')
+model.save_weights(prefix + '_weights.hdf5')
 
 loss, pop_loss, TD_loss, pop_acc, TD_acc = model.evaluate(x=xtest,y=[ytest_pop,ytest_TD])
 print("pop accuracy:", pop_acc)
 print("TD accuracy:", TD_acc)
 
-# confusion matrix on the test set
-'''
-print("\n\n**********************************")
-print("\n**********************************")
-'''
 # save pred vs true to file
+pred_file = prefix + '_preds.txt'
 num_samples, n2, L2 = xtest.shape
 predictions = model.predict(xtest)
 pop_preds = predictions[0].argmax(axis=-1)
 TD_preds = predictions[1].argmax(axis=-1)
-with open("preds_TD_pop.txt", "w") as f:
+with open(pred_file, "w") as f:
   for n in range(num_samples):
     line = str(ytest_pop[n]) + "," + str(ytest_TD[n]) + ":" + str(pop_preds[n]) + "," + str(TD_preds[n]) + "\n"
     f.write(line)
+print("wrote truth:prediction values to file:",pred_file,'\n')
+
+# confusion matrix on the test set
+conf_file = prefix + '_confmat.txt'
+confusion_matrix(pred_file, conf_file)
 
 # accuracy plot
+fig_file = prefix + '_accplot.png'
 plt.plot(history.history['pop_acc'], marker='v')
 plt.plot(history.history['TD_acc'], marker='o')
 plt.plot(history.history['val_pop_acc'], marker='v')
-plt.plot(history.history['val_TD_acc'], marler='o')
+plt.plot(history.history['val_TD_acc'], marker='o')
 plt.title('Model Training Accuracy')
 plt.ylabel('accuracy')
 plt.ylim(0,1)
 plt.xlabel('epoch')
 plt.xlim(0, 10)
+plt.xticks(range(10))
 plt.legend(['train pop', 'train TD', 'val pop', 'val TD'], loc='lower right')
+plt.savefig(fig_file)
+print("saved accuracy plot as:",fig_name,'\n')
 plt.show()

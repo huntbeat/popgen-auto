@@ -105,3 +105,8 @@ def confusion_matrix(pred_file, cm_file, print_matrix=True):
   print("wrote confusion matri(x/ces) to file:",cm_file,'\n')
 
 #################################################
+
+def training_accuracy_plot(model_file, history_keys, legend_names):
+  # TODO figure out how to get History object from loaded model
+
+#################################################
