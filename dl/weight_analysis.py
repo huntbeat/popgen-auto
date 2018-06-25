@@ -39,7 +39,9 @@ for arguments in [('/home/nhoang1/saralab/popgen-hmm-dl/dl/TD_pop/TD_pop_model.h
     
     plt.close()
 
-plt.plot(np.arange(1,257),wm_abs_dif_list)
+plt.plot(np.arange(1,257),wm_abs_dif_list[0]) 
+plt.plot(np.arange(1,257),wm_abs_dif_list[1])
+plt.plot(np.arange(1,257),wm_abs_dif_list[2])
 plt.title('Summed weight abs dif for three outputs')
 plt.legend(['TD', 'DP', 'RN'])
 plt.show()
