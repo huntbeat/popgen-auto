@@ -15,11 +15,10 @@ def parse_args():
 
     parser = optparse.OptionParser(description='msms simulator to difference sequence')
     parser.add_option('-t', '--input_file', type='string', help='path to input text file')
-    parser.add_option('-l', '--length', type='string', help='desired length of sequence')
     parser.add_option('-o', '--out_folder', type='string', help='path to output files folder')
     (opts, args) = parser.parse_args()
 
-    mandatories = ['input_file', 'length']
+    mandatories = ['input_file'] 
 
     for m in mandatories:
         if not opts.__dict__[m]:
@@ -35,14 +34,16 @@ def parse_args():
 
     return opts
 
-def msms_to_dif(input_file, length):
+def msms_to_dif(input_file):
     input_param = ""
     dif_string_list = []
     SEQ_D = ""
     trueTMRCA = []
     with open(input_file) as msms_file:
-        input_param = next(msms_file).replace("\n","")
-        input_param = "_".join(input_param.split(" ")[:-3])
+        input_string = next(msms_file).replace("\n","")
+        length = int(input_string.split(" ")[9])
+        print("The length of the sequence is %d." % length)
+        input_param = "_".join(input_string.split(" ")[:-3])
         next(msms_file) # rand number
         next(msms_file) # blank
         next(msms_file) # "//"
@@ -99,7 +100,7 @@ def msms_to_dif(input_file, length):
 
 def main():
     opts = parse_args()
-    input_param, SEQ_D, trueTMRCA = msms_to_dif(opts.input_file, int(opts.length))
+    input_param, SEQ_D, trueTMRCA = msms_to_dif(opts.input_file)
     out_filename = input_param
     with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_"," ") + "\n")
