@@ -105,11 +105,13 @@ def main():
     with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_"," ") + "\n")
         outputFile.write(SEQ_D + "\n")
+        print("Output pairwise difference sequence file: %s" % (opts.out_folder + "/" + out_filename + ".txt"))
 
     with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")
         for i in trueTMRCA:
             outputFile.write(str(i) + "\n")
+        print("Output TMRCA                        file: %s" % (opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt"))
 
     # with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
     #     outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")
