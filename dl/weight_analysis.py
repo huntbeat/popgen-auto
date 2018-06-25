@@ -26,18 +26,18 @@ for arguments in [('/home/nhoang1/saralab/popgen-hmm-dl/dl/TD_pop/TD_pop_model.h
 
     wm_abs_dif_list.append(np.sort(np.sum(wm_abs_dif, axis=1)/3.0))
 
-    plt.figure(1)
-    plt.plot(np.arange(1,257),np.sort(wm_abs_dif, axis=0))
-    plt.legend(['< 0, nat_sel','= 0, constant','> 0, bottleneck'])
-    plt.title('Weights for '+arguments[3] +', separate')
-    plt.show()
+    # plt.figure(1)
+    # plt.plot(np.arange(1,257),np.sort(wm_abs_dif, axis=0))
+    # plt.legend(['< 0, nat_sel','= 0, constant','> 0, bottleneck'])
+    # plt.title('Weights for '+arguments[3] +', separate')
+    # plt.show()
 
-    plt.figure(2)
-    plt.plot(np.arange(1,257),np.sort(np.sum(wm_abs_dif, axis=1)/3.0))
-    plt.title('Weights for '+arguments[3] +', combined')
-    plt.show()
-    
-    plt.close()
+    # plt.figure(2)
+    # plt.plot(np.arange(1,257),np.sort(np.sum(wm_abs_dif, axis=1)/3.0))
+    # plt.title('Weights for '+arguments[3] +', combined')
+    # plt.show()
+    # 
+    # plt.close()
 
 plt.plot(np.arange(1,257),wm_abs_dif_list[0]) 
 plt.plot(np.arange(1,257),wm_abs_dif_list[1])
