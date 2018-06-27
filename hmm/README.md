@@ -152,3 +152,10 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 06.22.18
 
 1. Created data resembling simulations from PSMC -- short and medium length versions with bins 32 and 10 iterations, for accuracy comparison and figures for presentation
+
+---
+06.27.18
+
+1. RNU - recurrent neural networks ; VAE - variational auto encoder
+2. Exchangeable NN to make row order unconditional
+3. Feed in real data to current pipelines

@@ -32,7 +32,7 @@ def parse_msms(filename):
         seg_string = next(msms_file)
         # segsites: 888
         total_snps = int(seg_string.split(" ")[1])
-        window = 50
+        window = 50000
         genomic_locations = []
 
         # Start and end
@@ -160,12 +160,10 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
     plt.xlabel('Genomic location')
     plt.ylabel("Tajima's D")
     plt.xlim(pos_start,pos_end)
-    plt.ylim(-1,1)
+    # plt.ylim(-5,5)
     plt.savefig('figs/tajimas_d_' + input_string.replace(" ","_") + '.png')
     plt.show()
     plt.close()
-
-    import pdb; pdb.set_trace()
 
     # # Plot of pi, the average number of pairwise differences
     # plt.figure(2,figsize=(14,8))
