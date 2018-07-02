@@ -9,10 +9,21 @@ java -jar msms3.2rc-b163.jar -N 10000 -ms 20 1 -t 400 -r 400 100000 > stat/simNo
 java -jar msms3.2rc-b163.jar -N 10000 -ms 20 1 -t 400 -r 400 100000 -eN 0.3 1.0 -eN 0.85 0.15 -eN 0.95 0.05 > stat/simChange.txt;
 java -jar msms3.2rc-b163.jar -N 10000 -ms 20 1 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -eN 0.5 1.0 -eN 0.85 0.25 -eN 0.95 0.05 > stat/simBoth.txt;
 
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 4000 -r 4000 1000000 > /scratch/saralab/first/million.txt;
+
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 > stat/simNone.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -eN 0.3 1.0 -eN 0.85 0.15 -eN 0.95 0.05 > stat/simChange.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -eN 0.5 1.0 -eN 0.85 0.25 -eN 0.95 0.05 > stat/simBoth.txt;
 
 java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 4000 -r 4000 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 -T -L > simNat.txt;
 
 
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 1 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
 
 
 java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 81960 -r 13560 30000000 -eN 0.01 0.05 -eN 0.0375 0.5 -eN 1.25 1 > stat/simPSMC.txt;
