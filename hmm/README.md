@@ -159,3 +159,10 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 1. RNU - recurrent neural networks ; VAE - variational auto encoder
 2. Exchangeable NN to make row order unconditional
 3. Feed in real data to current pipelines
+
+---
+07.02.18
+
+1. Creating data to feed to neural networks for NS
+2. See how much windows impact accuracy of HMM
+3. Look into optimization for model
