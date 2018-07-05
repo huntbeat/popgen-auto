@@ -7,6 +7,7 @@ Arguments: seq_file -
 Hunter Lee
 Sam Shih
 """
+import gc
 
 from viterbi import FB
 import numpy as np
@@ -27,6 +28,7 @@ class BW:
 
         for rep in range(i):
             self.update()
+            gc.collect()
 
     def log_sum(self, log_p, log_q):
         return log_p + math.log(1+math.exp(log_q-log_p))
