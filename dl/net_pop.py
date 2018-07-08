@@ -6,125 +6,88 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import sys
 import os
-from analyze_network import confusion_matrix
+from network_helper import *
 
 import keras
-from keras.models import Sequential 
+from keras.models import Sequential
 from keras.layers import Dense, Conv1D, Conv2D, Flatten, MaxPooling1D, Dropout, AveragePooling1D
 from keras import optimizers
 
-# fetch data 
-network_name = sys.argv[2] # filename prefix for all files created for this NN (i.e. model, weights, etc.)
-prefix = '/' + network_name + '/' + network_name
-data_file = sys.argv[1]
-path = '/scratch/nhoang1/'+data_file
-with h5py.File(path,'r') as f:
-  constant_h5 = f.get('constant')
-  bottleneck_h5 = f.get('bottleneck')
-  natselect_h5 = f.get('naturalselection')
-  output_h5 = f.get('pop_output')
-  constant = np.array(constant_h5)
-  bottleneck = np.array(bottleneck_h5)
-  natselect = np.array(natselect_h5)
-  output = np.array(output_h5)
+def main():
+    prefix = sys.argv[2] + '/' + sys.argv[2] # directory to store all created files in
+    xdatasets = ['constant','bottleneck','naturalselection']
+    ydatasets = ['pop_output']
+    dset_dict = fetch_data(xdatasets+ydatasets)
 
-data = np.concatenate((constant,bottleneck,natselect))
+    # for old h5py formatting
+    x = np.concatenate((dset_dict['constant'],dset_dict['bottleneck'],dset_dict['naturalselection']))
+    xdatasets = ['SNPs']
+    dset_dict['SNPs'] = x
+    del dset_dict['constant']
+    del dset_dict['bottleneck']
+    del dset_dict['naturalselection']
 
-# shuffle data before training
-data_shape_before = data.shape
-output_shape_before = output.shape
-s = np.arange(output.shape[0])
-np.random.shuffle(s)
-data = data[s]
-output = output[s]
-#assert(data_shape_before == data.shape)
-assert(output_shape_before == output.shape)
+    shuffle_data(dset_dict)
+    train_sets, test_sets = split_data(dset_dict, 0.8)
+    model, history = neural_network(train_sets, test_sets, prefix)
+    pred_file = make_predictions(model, test_sets, xdatasets, ydatasets, prefix)
 
-# split into train/validation and test
-si = int(output.shape[0]*0.8)
-trainX = data[:si]
-trainY = output[:si]
-testX = data[si:]
-testY = output[si:]
+    conf_file = prefix + '_confmat.txt'
+    confusion_matrix(pred_file, conf_file)
 
-# Schrider's network
+    training_accuracy_plot(history, prefix)
 
-ksize = 2
-l2_lambda = 0.0001
+######################################################
 
-n, L = trainX.shape[1:]
-model = Sequential()
-model.add(Conv1D(128*2, kernel_size=ksize,
-                 activation='relu',
-                 input_shape=(n,L),
-                 kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(MaxPooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
+def neural_network(train_sets, test_sets, prefix):
+    # Schrider's network
 
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(MaxPooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
+    ksize = 2
+    l2_lambda = 0.0001
 
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(AveragePooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
+    n, L = train_sets['SNPs'].shape[1:]
+    model = Sequential()
+    model.add(Conv1D(128*2, kernel_size=ksize,
+                     activation='relu',
+                     input_shape=(n,L),
+                     kernel_regularizer=keras.regularizers.l2(l2_lambda)))
+    model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
+    model.add(MaxPooling1D(pool_size=ksize))
+    model.add(Dropout(0.2))
 
-model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-#model.add(AveragePooling1D(pool_size=ksize))
-model.add(Dropout(0.2))
+    model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
+    model.add(MaxPooling1D(pool_size=ksize))
+    model.add(Dropout(0.2))
 
-model.add(Flatten())
-    
-model.add(Dense(256, activation='relu', kernel_initializer='normal',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
-model.add(Dropout(0.25))
-model.add(Dense(3, activation='softmax'))
-    
-model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adam(),
-                  metrics=['accuracy'])
-print(model.summary())
+    model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
+    model.add(AveragePooling1D(pool_size=ksize))
+    model.add(Dropout(0.2))
 
-history = model.fit(trainX, trainY, batch_size=64,
-        epochs=10,
-        verbose=1,
-        validation_split=0.2)
+    model.add(Conv1D(128*2, kernel_size=ksize, activation='relu',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
+    #model.add(AveragePooling1D(pool_size=ksize))
+    model.add(Dropout(0.2))
 
-model.save(prefix + '_model.hdf5')
-model.save_weights(prefix + '_weights.hdf5')
+    model.add(Flatten())
 
-num_samples, n2, L2 = testX.shape
-testX = np.reshape(testX,(-1,n2,L2))
-predictions = model.predict_classes(testX)
-true_labels = testY
-orig_labels = np.unique(testY,axis=0)
-loss, acc = model.evaluate(testX,testY)
-print('test accuracy:',acc)
+    model.add(Dense(256, activation='relu', kernel_initializer='normal',kernel_regularizer=keras.regularizers.l2(l2_lambda)))
+    model.add(Dropout(0.25))
+    model.add(Dense(3, activation='softmax'))
 
-# save pred vs true to file
-pred_file = "/"+network_name+"/"+network_name+"_preds.txt"
-with open(pred_file, "w") as f:
-  for n in range(num_samples):
-    line = str(true_labels[n]) + ":" + str(predictions[n]) + "\n"
-    f.write(line)
-print("wrote truth:prediction values to file:",pred_file,'\n')
+    model.compile(loss=keras.losses.binary_crossentropy,
+                      optimizer=keras.optimizers.Adam(),
+                      metrics=['accuracy'])
+    print(model.summary())
 
-# confusion matrix on the test set
-conf_file = "/"+network_name+"/"+network_name+"_confmat.txt"
-confusion_matrix(pred_file, conf_file)
+    history = model.fit(train_sets['SNPs'], train_sets['pop_output'], batch_size=64,
+            epochs=10,
+            verbose=1,
+            validation_split=0.2)
 
-# accuracy plot
-fig_file = "/"+network_name+"/"+network_name+"_accplot.png"
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('Model Training Accuracy')
-plt.ylabel('accuracy')
-plt.ylim(0,1)
-plt.xlabel('epoch')
-plt.xlim(0,10)
-plt.xticks(range(10))
-plt.legend(['train', 'validation'], loc='upper left')
-plt.savefig(fig_name)
-print("saved accuracy plot as:",fig_file,'\n')
-plt.show()
-plt.xlim(0,10)
+    model.save(prefix + '_model.hdf5')
+    model.save_weights(prefix + '_weights.hdf5')
+
+    loss, acc = model.evaluate(test_sets['SNPs'], test_sets['pop_output'])
+    print('test accuracy:', acc)
+    return model, history
+
+main()
