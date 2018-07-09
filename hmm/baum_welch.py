@@ -78,9 +78,7 @@ class BW:
                 self.u_log_emit[cur_state][obs] = self.u_log_emit[cur_state][obs] - normalize[cur_state]
 
     def update_init(self):
-        self.u_log_init = np.zeros(np.shape(self.fb.log_init))
-        for state in range(self.fb.K):
-            self.u_log_init[state] = self.fb.F[state][0] + self.fb.B[state][1] - self.fb.X_p
+        self.u_log_init = self.fb.F[:][0] + self.fb.B[:][1] - self.fb.X_p
 
     def update(self):
         self.update_tran()

@@ -61,9 +61,13 @@ import matplotlib.pyplot as plt
 # plt.ioff()
 from scipy.stats import expon
 
+"""
 from viterbi import Viterbi
 from viterbi import FB
 from baum_welch_retrieve import BW
+"""
+
+from bw import BW
 
 from random import uniform
 
@@ -134,7 +138,7 @@ def parse_params(param_filename, num_bins):
     emit = np.array([[float(ber) for ber in l.split()] for l in param_lines[2*K+5:2*K+5+K]])
 
     # convert to log-space
-    log_initial = init 
+    log_initial = init
     log_transition = tran
     log_emission = emit
 
@@ -246,7 +250,7 @@ def main():
         output_TMRCA.close()
         next(inputFasta) # rand number
         next(inputFasta) # blank
-        for iteration in tqdm(range(start_iteration, 6000)):
+        for iteration in tqdm(range(start_iteration, 2)):
             output_TMRCA = open('/scratch/saralab/first/TMRCA' + input_filename,'a+')
             next(inputFasta) # "//"
             next(inputFasta) # segsites: __
@@ -317,6 +321,8 @@ def main():
                 pool.close()
 
             bw_posterior_mean = np.array(bw_posterior_mean)
+            # delete
+            bw_posterior_mean_bars = decoded_to_bins(bw_posterior_mean, bins)
 
             posterior_mean_TMRCA = []
 
@@ -329,25 +335,24 @@ def main():
                 output_TMRCA.write(output + "\n")
             output_TMRCA.close()
 
-            # if True:
-            #     plt.figure(2, figsize=(14,8))
-            #     plt.title('PSMC plot')
-            #     if opts.truth_filename != None:
-            #         trueTMRCA_bars = decoded_to_bins(trueTMRCA, bins)
-            #         plt.step(np.insert(times,[0],[0.0]), np.insert(trueTMRCA_bars,[0],[0])*float(1/len(trueTMRCA)), color='black', label='truth')
-            #     plt.step(np.insert(times,[0],[0.0]), np.insert(bw_posterior_decoding_bars,[0],[0])*float(1/len(bw_posterior_decoding)), color='royalblue', label='post decoding')
-            #     plt.step(np.insert(times,[0],[0.0]), np.insert(bw_posterior_mean_bars,[0],[0])*float(1/len(bw_posterior_mean)), color='seagreen', label='post mean')
-            #     plt.xlabel('Years (in coalescent unit)')
-            #     plt.xscale('log')
-            #     plt.ylabel('Population')
-            #     axes = plt.gca()
-            #     axes.set_xlim([0.0,3.0])
-            #     axes.set_ylim([0,0.35])
-            #     xposition = [200/20000, 750/20000]
-            #     for xc in xposition:
-            #         plt.axvline(x=xc, color='r', linestyle='--')
-            #     plt.legend(loc='upper right')
-            #     plt.show()
+            if True:
+                plt.figure(2, figsize=(14,8))
+                plt.title('PSMC plot')
+                if opts.truth_filename != None:
+                    trueTMRCA_bars = decoded_to_bins(trueTMRCA, bins)
+                    plt.step(np.insert(times,[0],[0.0]), np.insert(trueTMRCA_bars,[0],[0])*float(1/len(trueTMRCA)), color='black', label='truth')
+                plt.step(np.insert(times,[0],[0.0]), np.insert(bw_posterior_mean_bars,[0],[0])*float(1/len(bw_posterior_mean)), color='seagreen', label='post mean')
+                plt.xlabel('Years (in coalescent unit)')
+                plt.xscale('log')
+                plt.ylabel('Population')
+                axes = plt.gca()
+                axes.set_xlim([0.0,3.0])
+                axes.set_ylim([0,0.35])
+                xposition = [200/20000, 750/20000]
+                for xc in xposition:
+                    plt.axvline(x=xc, color='r', linestyle='--')
+                plt.legend(loc='upper right')
+                plt.show()
 
             gc.collect()
 
