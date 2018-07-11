@@ -14,7 +14,7 @@ import math
 
 class BW:
 
-    def __init__(self, dif_seq, log_init, log_tran, log_emit, state, multi=True):
+    def __init__(self, dif_seq, log_init, log_tran, log_emit, state, update=True):
         self.dif_seq = dif_seq
         self.fb = FB(dif_seq=dif_seq, log_init=log_init,
                    log_tran=log_tran, log_emit=log_emit, state=state)
