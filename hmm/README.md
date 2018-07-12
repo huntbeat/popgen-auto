@@ -166,3 +166,19 @@ bcftools view -r 12:111766887-111817529 -Oz -o ALL_1117-1118MB.chr12.vcf.gz ALL.
 1. Creating data to feed to neural networks for NS
 2. See how much windows impact accuracy of HMM
 3. Look into optimization for model
+
+---
+07.05.18
+
+1. Ref - ANC difference
+2. RNN by one-dimensionalize
+3. Look into permutation invariance
+4. TMRCA faster
+5. 
+
+---
+07.09.18
+
+- Implemented Cython... need to confirm all the scripts work, ascertain how mutation rates - length changes resolution of output
+
+

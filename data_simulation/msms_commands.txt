@@ -22,6 +22,27 @@ java -jar msms3.2rc-b163.jar -N 10000 -ms 20 20000 -t 400 -r 400 100000 -SAA 100
 
 java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 4000 -r 4000 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 -T -L > simNat.txt;
 
+# reference
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 400 -r 400 100000 > ../hmm/test_hmm/normal.txt;
+
+# pop change
+java -jar msms3.2rc-b163.jar -N 10000 -ms 20 1 -t 400 -r 400 100000 -eN 0.3 1.0 -eN 0.85 0.15 -eN 0.95 0.05 > ../hmm/test_hmm/popchange.txt
+
+# longer
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 4000 -r 4000 1000000 > ../hmm/test_hmm/long.txt;
+
+# same, with more mutations
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 4000 -r 400 100000 > ../hmm/test_hmm/mutate.txt;
+
+# same, with less mutations
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 40 -r 400 100000 > ../hmm/test_hmm/mutateless.txt;
+
+# same, with more recombinations
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 400 -r 4000 100000 > ../hmm/test_hmm/recombine.txt;
+
+# more bins
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 400 -r 400 100000 > ../hmm/test_hmm/bins.txt;
+
 
 java -jar msms3.2rc-b163.jar -N 10000 -ms 20 1 -t 400 -r 400 100000 -SAA 1000 -SAa 50 -Saa 0 -Sp 0.5 -SF 0 > stat/simNat.txt;
 
@@ -35,6 +56,8 @@ java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 300.00 -r 60.00 300000 -eN 0.01
 java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 8196.0 -r 1356.0 3000000 -eN 0.01 0.05 -eN 0.0375 0.5 -eN 1.25 1 > stat/simPSMC_L.txt;
 java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 3000.0 -r 600.0 3000000 -eN 0.01 0.1 -eN 0.06 1 -eN 0.2 0.5 -eN 1 1 -eN 2 2 > stat/simPSMCsplit_L.txt;
 
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 4 -r 4 10000 -T -L > 10000.txt;
+java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 40 -r 40 100000 -T -L > 100000.txt;
 
 
 java -jar msms3.2rc-b163.jar -N 10000 -ms 2 1 -t 65130.39 -r 10973.82 30000000 -eN 0.0055 0.0832 -eN 0.0089 0.0489 -eN 0.0130 0.0607 -eN 0.0177 0.1072 -eN 0.0233 0.2093 -eN 0.0299 0.3630 -eN 0.0375 0.5041 -eN 0.0465 0.5870 -eN 0.0571 0.6343 -eN 0.0695 0.6138 -eN 0.0840 0.5292 -eN 0.1010 0.4409 -eN 0.1210 0.3749 -eN 0.1444 0.3313 -eN 0.1718 0.3066 -eN 0.2040 0.2952 -eN 0.2418 0.2915 -eN 0.2860 0.2950 -eN 0.3379 0.3103 -eN 0.3988 0.3458 -eN 0.4701 0.4109 -eN 0.5538 0.5048 -eN 0.6520 0.5996 -eN 0.7671 0.6440 -eN 0.9020 0.6178 -eN 1.0603 0.5345 -eN 1.4635 1.7931 > stat/simPSMCcomplex.txt;

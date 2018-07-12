@@ -50,14 +50,14 @@ def msms_to_dif(input_file):
         """
         TMRCA
         """
-        for line in msms_file:
-            if line[0] == '[':
-                seq_length = int(line[line.find("[")+1:line.find("]")])
-                TMRCA = float(line[line.find(":")+1:line.find(",")])
-                for i in range(seq_length):
-                    trueTMRCA.append(TMRCA)
-            else:
-                break # time: ______ ________
+        #for line in msms_file:
+        #    if line[0] == '[':
+        #        seq_length = int(line[line.find("[")+1:line.find("]")])
+        #        TMRCA = float(line[line.find(":")+1:line.find(",")])
+        #        for i in range(seq_length):
+        #            trueTMRCA.append(TMRCA)
+        #    else:
+        #        break # time: ______ ________
         _ = next(msms_file) # segsites: __
         pos_string_list = next(msms_file).split(" ")[1:-1]
         pos_set = set()
@@ -102,16 +102,20 @@ def main():
     opts = parse_args()
     input_param, SEQ_D, trueTMRCA = msms_to_dif(opts.input_file)
     out_filename = input_param
-    with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
+    # with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
+    #     outputFile.write(">> " + out_filename.replace("_"," ") + "\n")
+    #     outputFile.write(SEQ_D + "\n")
+    #     print("Output pairwise difference sequence file: %s" % (opts.out_folder + "/" + out_filename + ".txt"))
+    with open(opts.input_file.replace('.txt','_dif.txt'), 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_"," ") + "\n")
         outputFile.write(SEQ_D + "\n")
         print("Output pairwise difference sequence file: %s" % (opts.out_folder + "/" + out_filename + ".txt"))
 
-    with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
-        outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")
-        for i in trueTMRCA:
-            outputFile.write(str(i) + "\n")
-        print("Output TMRCA                        file: %s" % (opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt"))
+    # with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
+    #     outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")
+    #     for i in trueTMRCA:
+    #         outputFile.write(str(i) + "\n")
+    #     print("Output TMRCA                        file: %s" % (opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt"))
 
     # with open(opts.out_folder + "/" + "TMRCA_" + out_filename + ".txt", 'w') as outputFile:
     #     outputFile.write(">> " + "TMRCA " + out_filename.replace("_", " ") + "\n")

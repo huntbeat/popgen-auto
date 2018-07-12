@@ -112,6 +112,7 @@ def main():
     opts = parse_args()
     TMRCA, SEQ_D = msprime_to_dif(int(opts.length),
                             float(opts.mu), int(opts.n_e), float(opts.recomb), int(opts.window), opts.win_stat)
+    assert(len(SEQ_D) == int(int(opts.length)/int(opts.window)))
     out_filename = "msprime_" + opts.length + "_m" + opts.mu + "_Ne" + opts.n_e + "_r" + opts.recomb + "_w" + opts.window
     with open(opts.out_folder + "/" + out_filename + ".txt", 'w') as outputFile:
         outputFile.write(">> " + out_filename.replace("_", " ") + "\n")

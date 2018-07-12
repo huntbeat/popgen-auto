@@ -27,17 +27,19 @@ from math import log
 import numpy as np
 import sys
 import os
-# turns off plotting
-import matplotlib
-matplotlib.use('Agg')
+# # turns off plotting
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # turns off plotting
-plt.ioff()
+# plt.ioff()
 from scipy.stats import expon
+from tqdm import tqdm
 
 from viterbi import Viterbi
 from viterbi import FB
 from baum_welch import BW
+from bw import BW
 
 # For defining intervals for log-spaced bins in the exponential distribution
 ALPHA = 0.999
@@ -217,10 +219,22 @@ def main():
     # posterior_mean_bars = decoded_to_bins(posterior_mean, BINS)
 
     # Baum-Welch
-    bw = BW(dif_seq=dif_string, log_init=log_init,
-            log_tran=log_tran, log_emit=log_emit, state=times, i=opts.num_iter)
+#    bw = BW(dif_seq=dif_string, log_init=log_init,
+#            log_tran=log_tran, log_emit=log_emit, state=times, i=opts.num_iter)
+    #X_p = bw.X_p_list
 
-    X_p = bw.X_p_list
+    X_p = []
+    u_log_init = log_init
+    u_log_tran = log_tran
+    u_log_emit = log_emit
+    for i in tqdm(range(0,opts.num_iter)): 
+        bw = BW(dif_seq=dif_string, log_init=u_log_init,
+                log_tran=u_log_tran, log_emit=u_log_emit, state=times, update=True)
+        u_log_init = bw.u_log_init
+        u_log_tran = bw.u_log_tran
+        u_log_emit = bw.u_log_emit
+        X_p.append(bw.fb.X_p)
+
 
     u_log_init = bw.u_log_init
     u_log_tran = bw.u_log_tran
@@ -262,7 +276,7 @@ def main():
     plt.xlabel('locus')
     plt.ylabel('TMRCA')
     plt.legend(loc='upper right')
-    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_line.png"), format='png')
+    #plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_line.png"), format='png')
     plt.show()
 
     plt.figure(1)
@@ -276,7 +290,7 @@ def main():
     plt.xlabel('TMRCA bins')
     plt.ylabel('number of loci')
     plt.legend(loc='upper left')
-    plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_bar.png"), format='png')
+    #plt.savefig(opts.out_folder + "/" + inputFasta.replace(".txt", "_bw_bar.png"), format='png')
     plt.show()
     """
     SANITY
@@ -303,9 +317,9 @@ def main():
     """
     Estimated Parameters
     """
-    estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
-    with open(opts.out_param + "/" + inputFasta.replace(".txt",'upd_param.txt'), 'w') as outputFile:
-        outputFile.write(estimated_param)
+    # estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
+    # with open(opts.out_param + "/" + inputFasta.replace(".txt",'upd_param.txt'), 'w') as outputFile:
+    #     outputFile.write(estimated_param)
 
     """
     Baum-Welch Iteration outputs
@@ -320,7 +334,7 @@ def main():
     plt.title('Baum-Welch accuracy plot')
     plt.xlabel('Baum-Welch iteration')
     plt.ylabel('Log-likelihood, P(X)')
-    plt.savefig('fig/BW_training.png', format='png')
+    #plt.savefig('fig/BW_training.png', format='png')
     plt.show()
 
 if __name__ == "__main__":
