@@ -1,10 +1,16 @@
+import csv
 import vcf
 import numpy as np
 
 def main():
-  data_file = '/scratch/nhoang1/ALL.chr21.vcf.gz' 
+
+  #pick_individuals(20, 'MXL_samples.txt', 'igsr_samples.tsv') 
+
+
+  data_file = '/scratch/nhoang1/saralab/smallMXL_164-165Mb.chr21.vcf.gz' 
+  #data_file = '/scratch/nhoang1/saralab/ALL.chr21.vcf.gz' 
   vcf_reader = vcf.Reader(filename=data_file)
-  max_num = 100000
+  max_num = 100
 
   positions = [] # list of ints
   snps = [] # list of int vectors 
@@ -18,11 +24,8 @@ def main():
   #snp_matrix = np.array(snps).T # row is n, col is L
 
   print("finished gathering SNPs")
-  snps_per_window = count_snps_per_window(100000, positions)
-  regions = sorted(list(snps_per_window.keys()))
-  print("region : num_snps")
-  for r in regions:
-    print(r,':',snps_per_window[r])
+  window_size = 100000
+  snps_per_window = count_snps_per_window(window_size, positions)
 
 ##############################################################
 ##############################################################
@@ -69,7 +72,32 @@ def count_snps_per_window(window_size, snp_positions):
     if num_snps != 0:
       last_position_index = in_window[0][-1] + 1
     remaining_pos = remaining_pos[last_position_index:]
+  regions = sorted(list(counts.keys()))
+  print("region : num_snps")
+  for r in regions:
+    window = str(r*window_size+1)+'-'+str((r+1)*window_size)
+    print(window,':',counts[r])
   return counts
+
+##############################################################
+
+'''
+pick n individuals from 1000 genome file 
+@param n
+'''
+def pick_individuals(n, txt_file, tsv_file):
+  indiv_names = open(txt_file,'w')
+  with open(tsv_file,'r') as tsv:
+    reader = csv.DictReader(tsv, dialect='excel-tab')
+    count = 0
+    for row in reader:
+      if (count < n) and ('phase 3' in row['Data collections']):
+        line = row['Sample name'] + '\n'
+        indiv_names.write(line)
+        count += 1
+      else: break
+    if count < 10: print("Warning: less than",n,"samples in TSV file")
+  indiv_names.close()
 
 ##############################################################
 main()
