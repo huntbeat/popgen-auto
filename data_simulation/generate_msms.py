@@ -1,6 +1,7 @@
 '''
 parse msms files and format info for natural selection strength network with TD
 '''
+import gc
 import numpy as np
 import sys
 import h5py
@@ -21,25 +22,30 @@ def main():
 
     sim_dir = '/scratch/saralab/first/'
     TMRCA_dir = '/scratch/saralab/first/TMRCA/'
-    files = ['sim0_0.txt','sim10_0.txt','sim100_0.txt','sim1000_0.txt']
+    #files = ['strength0.txt','strength10.txt','strength100.txt','strength1000.txt']
+    files = ['strength100.txt','strength1000.txt']
 
+    for f in files:
+        read_files(f, strengths_dict, sim_dir, TMRCA_dir)
+
+def read_files(f, strengths_dict, sim_dir, TMRCA_dir):
     # for the network
     xSNPs = []
     xTMRCAs = []
     xPositions = []
     yNS_strengths = []
 
-    for f in files:
-        strength, SNPs, positions = parse_sim(sim_dir+f,20,100000,strengths_dict)
-        SNP_lengths = [mat.shape[1] for mat in SNPs]
-        TMRCAs = parse_TMRCA(TMRCA_dir+f,20,SNP_lengths)
-        SNPs_matrices, TMRCAs_matrices, position_matrices = centered_padding(SNPs,TMRCAs,positions,1500)
-        xSNPs.extend(SNPs_matrices)
-        xTMRCAs.extend(TMRCAs_matrices)
-        xPositions.extend(position_matrices)
-        #yNS_strengths.extend([strength for i in range(len(positions))])
-        yNS_strengths.extend([strength for i in range(len(position_matrices))])
+    strength, SNPs, positions = parse_sim(sim_dir+f,20,100000,strengths_dict)
+    SNP_lengths = [mat.shape[1] for mat in SNPs]
+    TMRCAs = parse_TMRCA(TMRCA_dir+f,20,SNP_lengths)
+    SNPs_matrices, TMRCAs_matrices, position_matrices = centered_padding(SNPs,TMRCAs,positions,1500)
+    xSNPs.extend(SNPs_matrices)
+    xTMRCAs.extend(TMRCAs_matrices)
+    xPositions.extend(position_matrices)
+    #yNS_strengths.extend([strength for i in range(len(positions))])
+    yNS_strengths.extend([strength for i in range(len(position_matrices))])
     assert(len(xSNPs)==len(xPositions)==len(yNS_strengths))
+
     xSNPs = np.array(xSNPs)
     xTMRCAs = np.array(xTMRCAs)
     xPositions = np.array(xPositions)
@@ -63,13 +69,13 @@ def main():
 
     dset_name = sys.argv[1]
     path = '/scratch/saralab/'+dset_name+'.hdf5'
-    with h5py.File(path,'w') as ns:
-        ns.create_dataset('SNPs', data=xSNPs)
-        ns.create_dataset('TMRCAs', data=np.array(xTMRCAs))
-        ns.create_dataset('positions', data=xPositions)
-        ns.create_dataset('SNP_TMRCA_pos', data=snp_tmrca_pos)
+    with h5py.File(path,'a') as ns:
+        #ns.create_dataset('SNPs', data=xSNPs)
+        #ns.create_dataset('TMRCAs', data=np.array(xTMRCAs))
+        #ns.create_dataset('positions', data=xPositions)
+        ns.create_dataset('SNP_TMRCA_pos_'+str(strength), data=snp_tmrca_pos)
         #ns.create_dataset('SNP_pos', data=snp_pos)
-        ns.create_dataset('NS_strength', data=yNS_strengths)
+        ns.create_dataset('NS_strength_'+str(strength), data=yNS_strengths)
 
 ###################################################################################
 
@@ -85,7 +91,7 @@ def parse_sim(filename, n, L, strengths_dict):
     num_sites_list = [] # corresponds to num sites per position vector
     count = 0 # to track parsing progress
 
-    file_code = int(filename.split('/')[4][3:].split('_')[0]) # example filename: scratch/saralab/first/sim10_1.txt
+    file_code = int(filename.split('/')[4][8:].split('.')[0]) # example filename: scratch/saralab/first/strength10.txt
     ns_strength = strengths_dict[file_code]
 
     print("nat sel data: parsing SNPs matrices...")
@@ -141,8 +147,7 @@ def centered_padding(SNPs_matrices, TMRCAs_matrices, position_matrices, length):
     uniform_SNPs = []
     uniform_TMRCAs = []
     uniform_pos_vecs = []
-    #for i in range(len(SNPs_matrices)):
-    for i in range(3900): # TMRCA cut short
+    for i in range(len(SNPs_matrices)):
         snp = SNPs_matrices[i]
         tmrca = TMRCAs_matrices[i]
         position_matrix = position_matrices[i]
@@ -186,19 +191,12 @@ def parse_TMRCA(filename, n, SNP_lengths):
             TMRCAs.append(float_TMRCAs)
         TMRCAs = np.array(TMRCAs)
 
-        # BANDAGE
-        if TMRCAs[0].shape[0] > SNP_lengths[count]:
-            TMRCAs = TMRCAs[:,:SNP_lengths[count]]
-        if TMRCAs[0].shape[0] < SNP_lengths[count]:
-            diff = SNP_lengths[count] - TMRCAs[0].shape[0]
-            TMRCAs = np.concatenate((TMRCAs, np.zeros((n,diff))), axis=1)
-        #
-
         assert(TMRCAs[0].shape[0]==SNP_lengths[count])
         assert(TMRCAs.shape[0]==n)
         TMRCAs_matrices.append(TMRCAs)
-        if count%100==0: print(count)
         count += 1
+        if count%100==0: print(count)
+
     file_.close()
     return TMRCAs_matrices
 
@@ -228,5 +226,6 @@ def position_distances(position_vector):
 
 
 ###################################################################################
+
 
 main()
