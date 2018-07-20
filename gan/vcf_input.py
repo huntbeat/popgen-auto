@@ -260,10 +260,22 @@ def cyvcf_to_input(filename, chrom, sample_size, start, length):
     # sample_list = list(sample_set)
 
     # 10 people from MXC, top
-    samples = pick_individuals(n=sample_size, csv_file='igsr_samples.tsv')
-    sample_list = samples
-    sample_list = ['NA19658', 'NA19649', 'NA19651', 'NA19723', 'NA19719', 'NA19728', 'NA19657', 'NA19664', 'NA19735', 'NA19669']
     vcf = VCF(filename)
+    samples = vcf.samples
+    sample_set = set()
+
+    # retrieve a sample from the total sample list
+    if sample_size < len(samples):
+        for i in range(sample_size):
+            chosen = random.choice(samples)
+            while chosen in sample_set:
+                chosen = random.choice(samples)
+            sample_set.add(chosen)
+    else:
+        print("Sample size bigger than total number of samples")
+        return -1
+    
+    sample_list = list(sample_set)
     vcf.set_samples(sample_list)
 
     # find SNP positions and alleles

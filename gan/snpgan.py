@@ -11,7 +11,12 @@ from keras.utils import to_categorical
 import keras.backend as K
 # K.set_image_dim_ordering('th')
 
+# turns off plotting
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+# turns off plotting
+plt.ioff()
 
 import numpy as np
 from vcf_input import *
@@ -27,7 +32,7 @@ class INFOGAN():
         self.START = find_SNP_start(filename=self.filename, chrom=self.chrom) - self.length
         self.END = 48119740 - self.length
 
-        self.l = 40
+        self.l = 50
         self.n = self.sample_size
 
         # self.img_rows = self.n
@@ -164,10 +169,10 @@ class INFOGAN():
         X_train = []
         y_train = []
 
-        dataset = 60
+        dataset = 5000 
+        random_start = int(uniform(self.START, self.END))
 
         for i in tqdm(range(dataset)):
-            random_start = int(uniform(self.START, self.END))
             x_input, y_input = cyvcf_to_input(filename= self.filename,
             chrom=self.chrom, sample_size=self.sample_size,
             start=random_start, length=self.length)
@@ -190,8 +195,6 @@ class INFOGAN():
         # Move channel axis to last
         X_train = np.moveaxis(X_train, 1, -1)
         y_train = y_train.reshape(-1, 1)
-
-        import pdb; pdb.set_trace()
 
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))
