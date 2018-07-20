@@ -266,11 +266,9 @@ def cyvcf_to_input(filename, chrom, sample_size, start, length):
     vcf = VCF(filename)
     vcf.set_samples(sample_list)
 
-    import pdb; pdb.set_trace()
-
     # find SNP positions and alleles
     pos = start
-    for record in vcf:
+    for record in vcf(str(chrom) + ":" + str(start) + "-" + str(start+length)):
         individuals_with_SNP = 0
         for genotype in record.genotypes:
             left_genotype = int(genotype[0])
@@ -314,11 +312,8 @@ def cyvcf_to_input(filename, chrom, sample_size, start, length):
     T_D = d / var if var != 0 else 0
 
     # print(SNP_loci, SNP_num_individuals, S, pi, T_D)
-    print("Number of segregating sites: %d" % len(SNP_loci))
     assert(len(SNP_num_individuals) == len(SNP_loci))
     assert(S == len(SNP_loci))
-    print("Average pairwise difference : %.3f" % pi)
-    print("Tajima's D: %.3f" % T_D)
 
     x_input = [SNP_loci, SNP_num_individuals]
     y_input = [T_D]

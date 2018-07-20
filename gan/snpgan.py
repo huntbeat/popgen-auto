@@ -164,7 +164,7 @@ class INFOGAN():
         X_train = []
         y_train = []
 
-        dataset = 4
+        dataset = 60
 
         for i in tqdm(range(dataset)):
             random_start = int(uniform(self.START, self.END))
@@ -190,6 +190,8 @@ class INFOGAN():
         # Move channel axis to last
         X_train = np.moveaxis(X_train, 1, -1)
         y_train = y_train.reshape(-1, 1)
+
+        import pdb; pdb.set_trace()
 
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))
