@@ -23,18 +23,18 @@ class INFOGAN():
         self.filename = '/scratch/hlee6/vcf/ALL.chr21.vcf.gz'
         self.chrom = 21
         self.sample_size = 10
-        self.length = 5e3
+        self.length = 10e3
         self.START = find_SNP_start(filename=self.filename, chrom=self.chrom) - self.length
         self.END = 48119740 - self.length
 
-        self.l = 28
+        self.l = 40
         self.n = self.sample_size
 
         # self.img_rows = self.n
         # self.img_cols = self.l
         self.img_rows = 28
         self.img_cols = 28
-        self.channels = 1
+        self.channels = 2
         self.num_classes = 10
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         # self.img_shape = (self.channels, self.img_rows, self.img_cols)
@@ -168,7 +168,7 @@ class INFOGAN():
 
         for i in tqdm(range(dataset)):
             random_start = int(uniform(self.START, self.END))
-            x_input, y_input = vcf_to_input(filename= self.filename,
+            x_input, y_input = cyvcf_to_input(filename= self.filename,
             chrom=self.chrom, sample_size=self.sample_size,
             start=random_start, length=self.length)
             X_input = pad_and_tile(x_input, length=self.img_cols, rows=self.img_rows)
