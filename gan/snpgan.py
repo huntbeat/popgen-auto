@@ -9,7 +9,7 @@ from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 import keras.backend as K
-K.set_image_dim_ordering('th')
+# K.set_image_dim_ordering('th')
 
 import matplotlib.pyplot as plt
 
@@ -36,8 +36,8 @@ class INFOGAN():
         self.img_cols = 28
         self.channels = 1
         self.num_classes = 10
-        # self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.img_shape = (self.channels, self.img_rows, self.img_cols)
+        self.img_shape = (self.img_rows, self.img_cols, self.channels)
+        # self.img_shape = (self.channels, self.img_rows, self.img_cols)
         self.latent_dim = 72
 
         optimizer = Adam(0.0002, 0.5)
@@ -181,13 +181,14 @@ class INFOGAN():
         X_train = np.array(X_train)
         y_train = np.transpose(transposed_y_train)
 
-        import pdb; pdb.set_trace()
-
         # Rescale -1 to 1
         # TODO: find each channel then normalize (half the max, divide by max)
         # TODO: architecture is prob set for one channel datasets, ours has two
-        X_train = (X_train.astype(np.float32) - 127.5) / 127.5
-        X_train = np.expand_dims(X_train, axis=3)
+
+        for channel in range(X_train.shape[1]):
+            X_train[:,channel] = (X_train[:,channel] - np.amax(X_train[:,channel])) / np.amax(X_train[:,channel])
+        # Move channel axis to last
+        X_train = np.moveaxis(X_train, 1, -1)
         y_train = y_train.reshape(-1, 1)
 
         # Adversarial ground truths
