@@ -8,8 +8,9 @@ plt.ioff()
 
 from sklearn.decomposition import PCA
 from sklearn import datasets
+from sklearn.preprocessing import StandardScaler
 
-FILENAME = 'statsZI/example/stats/stats_0.txt'
+FILENAME = 'statsZI/example/stats/stats_1.txt'
 stats_name = []
 stats = []
 total_sim = 0
@@ -28,7 +29,13 @@ X = np.array(stats)
 y = np.array(list(range(types)))
 y = np.repeat(y, int(total_sim/types))
 
-pca = PCA(n_components=2)
+#"""
+#feature scaling, TESTING
+#"""
+#scaler = StandardScaler()
+#X = scaler.fit_transform(X)
+
+pca = PCA(n_components=2, whiten=False)
 X_r = pca.fit_transform(X)
 
 plt.figure()
@@ -45,3 +52,6 @@ plt.legend()
 
 plt.savefig(FILENAME.split("/")[-1].replace('.txt','.png'))
 plt.show()
+
+print('explained variance ratio (first two components): %s'
+      % str(pca.explained_variance_ratio_))
