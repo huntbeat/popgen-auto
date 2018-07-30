@@ -11,7 +11,12 @@ from keras.utils import to_categorical
 import keras.backend as K
 # K.set_image_dim_ordering('th')
 
+# turns off plotting
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+# turns off plotting
+plt.ioff()
 
 import numpy as np
 from vcf_input import *
@@ -22,22 +27,22 @@ class INFOGAN():
     def __init__(self):
         self.filename = '/scratch/hlee6/vcf/ALL.chr21.vcf.gz'
         self.chrom = 21
-        self.sample_size = 10
-        self.length = 5e3
+        self.sample_size = 28
+        self.length = 10e3
         self.START = find_SNP_start(filename=self.filename, chrom=self.chrom) - self.length
         self.END = 48119740 - self.length
+        self.pop_stats = [0 for i in range(3)] # stats: S, pi T_D 
 
-        self.l = 28
+        self.channel_max = [] # first channel: num_individuals, second channel: SNP distance
+
         self.n = self.sample_size
+        self.l = 64
 
-        # self.img_rows = self.n
-        # self.img_cols = self.l
-        self.img_rows = 28
-        self.img_cols = 28
-        self.channels = 1
+        self.img_rows = self.n
+        self.img_cols = self.l
+        self.channels = 2
         self.num_classes = 10
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        # self.img_shape = (self.channels, self.img_rows, self.img_cols)
         self.latent_dim = 72
 
         optimizer = Adam(0.0002, 0.5)
@@ -81,8 +86,11 @@ class INFOGAN():
 
         model = Sequential()
 
-        model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
-        model.add(Reshape((7, 7, 128)))
+        new_rows = int(self.img_rows/4)
+        new_cols = int(self.img_cols/4)
+
+        model.add(Dense(128 * new_rows * new_cols, activation="relu", input_dim=self.latent_dim))
+        model.add(Reshape((new_rows, new_cols, 128)))
         model.add(BatchNormalization(momentum=0.8))
         model.add(UpSampling2D())
         model.add(Conv2D(128, kernel_size=3, padding="same"))
@@ -164,21 +172,23 @@ class INFOGAN():
         X_train = []
         y_train = []
 
-        dataset = 4
+        dataset = 100 
+        random_start = int(uniform(self.START, self.END))
 
         for i in tqdm(range(dataset)):
-            random_start = int(uniform(self.START, self.END))
-            x_input, y_input = vcf_to_input(filename= self.filename,
+            x_input, y_input = cyvcf_to_input(filename= self.filename,
             chrom=self.chrom, sample_size=self.sample_size,
             start=random_start, length=self.length)
+            for idx, stat in enumerate(y_input):
+               self.pop_stats[idx] += stat / dataset
             X_input = pad_and_tile(x_input, length=self.img_cols, rows=self.img_rows)
             X_train.append(X_input)
-            y_train.append(y_input)
+            y_train.append([y_input[-1]])
 
         y_train = np.array(y_train)
         transposed_y_train = place_bins(np.transpose(y_train), num_bins=self.num_classes)
 
-        X_train = np.array(X_train)
+        X_train = np.array(X_train, dtype='float32')
         y_train = np.transpose(transposed_y_train)
 
         # Rescale -1 to 1
@@ -186,7 +196,8 @@ class INFOGAN():
         # TODO: architecture is prob set for one channel datasets, ours has two
 
         for channel in range(X_train.shape[1]):
-            X_train[:,channel] = (X_train[:,channel] - np.amax(X_train[:,channel])) / np.amax(X_train[:,channel])
+            self.channel_max.append(np.amax(X_train[:,channel]))
+            X_train[:,channel] = (X_train[:,channel] - float(self.channel_max[-1]/2)) / self.channel_max[-1]
         # Move channel axis to last
         X_train = np.moveaxis(X_train, 1, -1)
         y_train = y_train.reshape(-1, 1)
@@ -242,11 +253,14 @@ class INFOGAN():
             gen_input = np.concatenate((sampled_noise, label), axis=1)
             gen_imgs = self.generator.predict(gen_input)
             gen_imgs = 0.5 * gen_imgs + 0.5
+            print("MSE between pop_stats and gan_stats: %f" % imgs_to_mse(gen_imgs, self.channel_max, self.pop_stats, self.length))
             for j in range(r):
                 axs[j,i].imshow(gen_imgs[j,:,:,0], cmap='gray')
                 axs[j,i].axis('off')
-        fig.savefig("images/%d.png" % epoch)
+        plt.title("%.2f" % imgs_to_mse(gen_imgs, self.channel_max, self.pop_stats, self.length))
+        # fig.savefig("images/%d.png" % epoch)
         plt.close()
+
 
     def save_model(self):
 
@@ -265,4 +279,4 @@ class INFOGAN():
 
 if __name__ == '__main__':
     infogan = INFOGAN()
-    infogan.train(epochs=50000, batch_size=128, sample_interval=50)
+    infogan.train(epochs=50000, batch_size=128, sample_interval=20)
