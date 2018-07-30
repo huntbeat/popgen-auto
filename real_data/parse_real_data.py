@@ -7,15 +7,16 @@ def main():
   #pick_individuals(20, 'MXL_samples.txt', 'igsr_samples.tsv') 
 
 
-  data_file = '/scratch/nhoang1/saralab/smallMXL_164-165Mb.chr21.vcf.gz' 
-  #data_file = '/scratch/nhoang1/saralab/ALL.chr21.vcf.gz' 
+  data_file = '/scratch/nhoang1/saralab/MXL/MXL97-99.chr21.vcf.gz' 
   vcf_reader = vcf.Reader(filename=data_file)
-  max_num = 100
+  #max_num = 100
 
   positions = [] # list of ints
   snps = [] # list of int vectors 
-  for i in range(max_num): #assumes max_num <= total num of records
-    record = next(vcf_reader)
+  #for i in range(max_num): #assumes max_num <= total num of records
+  for record in vcf_reader:
+    #record = next(vcf_reader)
+    #print(record.POS)
     positions.append(record.POS)
     #snp = snp_vector(record)
     #snps.append(snp)
@@ -25,7 +26,7 @@ def main():
 
   print("finished gathering SNPs")
   window_size = 100000
-  snps_per_window = count_snps_per_window(window_size, positions)
+  snps_per_window = count_snps_per_window(window_size, positions, 9700000)
 
 ##############################################################
 ##############################################################
@@ -58,24 +59,24 @@ def snp_vector(record):
 '''
 counts how many SNPs are in each "window" of sequences
 '''
-def count_snps_per_window(window_size, snp_positions):
-  counts = {} # k = region num, v = num snps
-  count = 93
+def count_snps_per_window(window_size, snp_positions, chrom_start):
+  counts = {} # k = region start, v = num snps
+  region_start = chrom_start 
   remaining_pos = np.array(snp_positions)
   last_position_index = 0
   while remaining_pos.shape[0] != 0:
-    window_end = ((count+1)*window_size)
+    window_end = region_start + window_size
     in_window = np.where(remaining_pos < window_end)
     num_snps = in_window[0].shape[0]
-    counts[count] = num_snps
-    count += 1
+    counts[region_start] = num_snps
+    region_start += window_size
     if num_snps != 0:
       last_position_index = in_window[0][-1] + 1
     remaining_pos = remaining_pos[last_position_index:]
   regions = sorted(list(counts.keys()))
   print("region : num_snps")
   for r in regions:
-    window = str(r*window_size+1)+'-'+str((r+1)*window_size)
+    window = str(r)+'-'+str(r+window_size)
     print(window,':',counts[r])
   return counts
 
