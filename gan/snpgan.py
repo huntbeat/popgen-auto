@@ -172,7 +172,7 @@ class INFOGAN():
         X_train = []
         y_train = []
 
-        dataset = 100 
+        dataset = 80000 
         random_start = int(uniform(self.START, self.END))
 
         for i in tqdm(range(dataset)):

@@ -362,8 +362,6 @@ def imgs_to_mse(imgs, scalars, pop_stats, total_length):
 
         zero_indices = [idx for idx, element in enumerate(SNP_num_individuals) if element == 0]
 
-        import pdb; pdb.set_trace()
-
         for index in reversed(zero_indices):
             del SNP_num_individuals[index]
             SNP_loci[index-1] += SNP_loci[index]
