@@ -46,12 +46,13 @@ def split_data(dset_dict, train_percent):
         test_sets[ds] = data[split_index:]
     return train_sets, test_sets
 
+
 '''
 @param model
 @param test_sets
 @param xnames
 @param ynames
-@param prefixplt.title('Model Training Accuracy')
+@param prefix
 @return filename of truth:pred values file
 '''
 def make_predictions(model, test_sets, xnames, ynames, prefix):
