@@ -20,10 +20,9 @@ def main():
         else: key = 10**file_code
         strengths_dict[key] = strength_label
 
-    sim_dir = '/scratch/saralab/first/'
-    TMRCA_dir = '/scratch/saralab/first/TMRCA/'
-    #files = ['strength0.txt','strength10.txt','strength100.txt','strength1000.txt']
-    files = ['strength100.txt','strength1000.txt']
+    sim_dir = '/scratch/saralab/third/'
+    TMRCA_dir = '/scratch/saralab/third/TMRCA/'
+    files = ['strength0.txt','strength10.txt','strength100.txt','strength1000.txt']
 
     for f in files:
         read_files(f, strengths_dict, sim_dir, TMRCA_dir)
