@@ -17,8 +17,8 @@ import simulation_helpers
 
 START_DEMO = 0
 
-NUM_TARGET = 10 # this is how many datasets we want per demo
-NUM_PER_S  = 10 # using 4 selection coefficients
+NUM_TARGET = 25000 # this is how many datasets we want per demo
+NUM_PER_S  = 25000 # using 4 selection coefficients
 
 # we want the commandline to look something like this
 # msms -N 100000 -ms 100 1 -t 336 -r 336 100000 -eN 0 4.754958 -eN 0.05 0.668148 -eN 0.2 3.163320 -Sp 0.5 -SI 0.003 1 0.0001 -SAA 10000 -SAa 5000 -Saa 0 -Smark > msms/hs/demo0/data0.msms

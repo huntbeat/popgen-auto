@@ -1,24 +1,22 @@
 # simulator for HMM CNN, parallelized
 # ssheehan, June 2015
+# example command:
+# python high_parallel.py -d /scratch/saralab/second/MXL_demo.txt -m /scratch/saralab/third/ -c 8
 
-from multiprocessing import Pool
+from multiprocessing import Pool, Lock, Value
 import optparse
 import random
 import subprocess
 import sys
 import time
-from tqdm import tqdm
 
-import simulation_helpers
+import helper_parallel
 
 #---------
 # GLOBALS
 #---------
 
-START_DEMO = 0
-
 NUM_TARGET = 25000 # this is how many datasets we want per demo
-NUM_PER_S  = 25000 # using 4 selection coefficients
 
 # we want the commandline to look something like this
 # msms -N 100000 -ms 100 1 -t 336 -r 336 100000 -eN 0 4.754958 -eN 0.05 0.668148 -eN 0.2 3.163320 -Sp 0.5 -SI 0.003 1 0.0001 -SAA 10000 -SAa 5000 -Saa 0 -Smark > msms/hs/demo0/data0.msms
@@ -43,7 +41,7 @@ SEL_START = 0.05
 #SEL_START = 0.5
 
 # selection strength
-S_LST = [0.1/2]
+S_LST = 0.1/2 # selection strengths - low, mid, high : [0.001/2, 0.01/2, 0.1/2]
 
 # hard sweep occurs in one individual
 SEL_FREQ = float(1)/Ne
@@ -78,17 +76,19 @@ for m in mandatories:
 # HELPERS
 #---------
 
-
-
 # select_type is now always the same
-def msms_commandline(demo, sel_loc, p):
+def msms_commandline(p):
+
+    loc_R = random.random()
+    sel_loc = (loc_R*(MAX_SEL_LOC - MIN_SEL_LOC) + MIN_SEL_LOC)
+
     msms_str = 'java -jar msms3.2rc-b163.jar -N ' + str(Ne) + ' -ms ' + str(SAMPLE_SIZE) + ' 1 '
     msms_str += '-t ' + str(THETA_REGION) + ' '
     msms_str += '-r ' + str(RHO_REGION) + ' ' + str(L) + ' '
-    msms_str += demo
+    msms_str += DEMO
 
-    # HARD SWEEP 
-    S = S_LST[p/NUM_PER_S]
+    # hard sweep 
+    S = S_LST
     SI  = str(SEL_START) + ' 1 ' + str(SEL_FREQ)
     SAA_BAL = 2*Ne*S # homozygote with selected allele
     SAa_BAL =   Ne*S # heterozygote half double selection strength of homozygote
@@ -97,30 +97,15 @@ def msms_commandline(demo, sel_loc, p):
     
     return msms_str
 
-
-# for parallelization (I believe this is so we can still use keyboard input to kill a parallel run)
-def init_worker():
-    simulation_helpers.signal.signal(simulation_helpers.signal.SIGINT, simulation_helpers.signal.SIG_IGN)
-
-
 # msms runs for this demo_idx
-def run_msms(demo_idx, demo):
-    demo_path = opts.msms_folder + 'high/'
-    subprocess.call('mkdir ' + demo_path, shell=True)
+def run_msms((i, interval)):
 
-    msms_total_filename = demo_path + 'compiled.msms'
-    msms_total = open(msms_total_filename, 'w')
-    
-    printed_header = False
-    
-    for p in tqdm(range(NUM_TARGET)):
+    global counter
+    msms_list = []
 
-        # sample the selection location
-        loc_R = random.random()
-        sel_loc = (loc_R*(MAX_SEL_LOC - MIN_SEL_LOC) + MIN_SEL_LOC)
-        
+    for p in range(i*interval, (i+1)*interval):
         msms_filename = demo_path + 'data' + str(p) + '.msms'
-        msms_command = msms_commandline(demo, sel_loc, p) + ' > ' + msms_filename
+        msms_command = msms_commandline(DEMO) + ' > ' + msms_filename
         #print(msms_command)
 
         # keep doing the simulation unti we get freq > 0
@@ -132,19 +117,19 @@ def run_msms(demo_idx, demo):
             msms_file = open(msms_filename,'r')
             msms_string = msms_file.read()
             #msms.file.close()
-            freq = simulation_helpers.examine_selection(msms_string)
+            freq = helper_parallel.examine_selection(msms_string)
             #print(msms_string[:msms_string.find('\n')])
             #print(freq)
             try_num += 1
-        if not printed_header:
-            msms_total.write(msms_string)
-            printed_header = True
-        else:
-            cut = find_nth(msms_string, '\n', 3) + len('\n')
-            msms_total.write(msms_string[cut:])
+        cut = find_nth(msms_string, '\n', 3) + len('\n')
+        msms_list.append(msms_string[cut:])
         #print('final freq: ' + str(freq))
+        with counter.get_lock():
+            counter.value += 1
+            print(counter.value)
+            print( "Est. time till compl : %f hours" % ((time.time() - BEGIN)*(NUM_TARGET-counter.value)/(counter.value)/60/60) ) 
 
-    msms_total.close()
+    return "".join(msms_list)
 
 def find_nth(haystack, needle, n):
     start = haystack.find(needle)
@@ -158,33 +143,46 @@ def find_nth(haystack, needle, n):
 # MAIN
 #--------------
 
+def init(args):
+    global counter
+    counter = args
 
-all_demos = simulation_helpers.get_demo_sizes(opts.demo_filename)
-num_demo  = len(all_demos)
-print('num demos: ' + str(num_demo-START_DEMO) + ', num cores: ' + str(opts.num_cores))
+BEGIN = time.time()
+DEMO = helper_parallel.get_demo_sizes(opts.demo_filename)
+
+demo_path = opts.msms_folder + 'high/'
+subprocess.call('mkdir ' + demo_path, shell=True)
+msms_total_filename = demo_path + 'compiled.msms'
+msms_total = open(msms_total_filename, 'w')
+
+print('num target: ' + str(NUM_TARGET) + ', num cores: ' + str(opts.num_cores))
+print(demo_path)
+print("sel strength : %f" % S_LST)
 
 # testing
-#run_msms(0,all_demos[0])
-#1/0
+#run_msms((0,1))
+#import pdb; pdb.set_trace()
+# 1/0
 
 # begin parallelization
-pool = Pool(opts.num_cores)
+v = Value('i', 0)
+pool = Pool(processes=opts.num_cores, initializer=init, initargs=(v,))
+
+arguments = [(i, int(NUM_TARGET/opts.num_cores)) for i in range(0, opts.num_cores)]
 
 # note that the function async is applied to ('run_msms' in this case) cannot have printing
 # and runtime error messages within this function will also not be displayed
-results = [pool.apply_async(run_msms, [i, all_demos[i]]) for i in range(START_DEMO,num_demo)]
+msms_strings = pool.map(run_msms, arguments)
+pool.close()
+pool.join()
 
-try:
-    print "Waiting 10 seconds"
-    time.sleep(10)
+msms_string_list = [msms_strings[0] for msms_string in msms_strings]
 
-except KeyboardInterrupt:
-    print "Caught KeyboardInterrupt, terminating workers"
-    pool.terminate()
-    pool.join()
+msms_final_string = "".join(msms_string_list)
+msms_total.write("ms -N 10000 20 " +str(NUM_TARGET)+ " -t 400 -r 400 100000 -SAA -SAa -Saa" + "\n")
+msms_total.write("random\n")
+msms_total.write("\n")
+msms_total.write(msms_final_string)
+msms_total.close()
 
-else:
-    print "Quitting normally"
-    pool.close()
-    pool.join()
-# end parallelization
+print("DONE!")
