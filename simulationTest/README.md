@@ -3,3 +3,5 @@ Hi there! This is the simulation command script for the msms -- these scripts sp
 The name of the scripts speak for themselves. For example, 'high' means simulations with high sweep, and so on.
 
 The scripts are parallelized, and I recommend that you run each script on each computer.
+
+Do remember to specify where to output the files and change the parameters as you wish!
