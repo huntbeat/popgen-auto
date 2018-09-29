@@ -24,14 +24,22 @@ from keras.losses import mse, binary_crossentropy
 from keras.utils import plot_model
 from keras import backend as K
 
+from scipy.stats import gaussian_kde
+
 import numpy as np
+
+# turns off plotting
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+# turns off plotting
+plt.ioff()
 import argparse
 import os
 
 import h5py
 
-INPUT_FILE = '/scratch/saralab/VAE/input/stats_0.h5'
+INPUT_FILE = '/scratch/saralab/VAE/input/test_0.h5'
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample eps = N(0,I)
@@ -76,8 +84,8 @@ def plot_results(models,
     z_mean, _, _ = encoder.predict(x_test,
                                    batch_size=batch_size)
     plt.figure(figsize=(12, 10))
-    plt.scatter(z_mean[:, 0], z_mean[:, 1], c=y_test)
-    plt.colorbar()
+    plt.scatter(z_mean[:, 0], z_mean[:, 1])
+    #plt.colorbar()
     plt.xlabel("z[0]")
     plt.ylabel("z[1]")
     plt.savefig(filename)
@@ -127,9 +135,10 @@ def plot_results(models,
 # x_test = x_test.astype('float32') / 255
 
 # STAT dataset
-import pdb; pdb.set_trace()
 f = h5py.File(INPUT_FILE, 'r')
 x_all = f['VAE']
+x_all = np.array(x_all)
+x_all = (x_all - x_all.min(axis=0)) / (x_all.max(axis=0) - x_all.min(axis=0))
 original_dim = x_all.shape[1]
 cut = int(x_all.shape[0] * (8/10))
 x_train = x_all[:cut].astype('float32')
@@ -137,11 +146,30 @@ y_train = np.ones_like(x_train[:,1])
 x_test = x_all[cut:].astype('float32')
 y_test = np.ones_like(x_train[:,1])
 
+# Analyze dataset
+def kde_scipy(x, x_grid, bandwidth, **kwargs):
+    """Kernel Density Estimation with Scipy"""
+    kde = gaussian_kde(x, bw_method=bandwidth, **kwargs)
+    return kde.evaluate(x_grid) 
+
+if False:
+    NUM_GRID = 1000
+    BANDWIDTH = 0.3
+    for i in range(original_dim):
+        sim_values = x_all[:NUM_GRID,i]
+        x_grid = np.linspace(min(sim_values), max(sim_values), NUM_GRID)
+        dist = kde_scipy(sim_values, x_grid, BANDWIDTH)
+        plt.figure(1)
+        plt.plot(x_grid, dist)
+    
+    plt.savefig('check_distribution.png')
+    plt.show()    
+
 # network parameters
 input_shape = (original_dim, )
 intermediate_dim = 256
 batch_size = 128
-latent_dim = 2
+latent_dim = 50
 epochs = 50
 
 # VAE model = encoder + decoder
@@ -202,7 +230,7 @@ if __name__ == '__main__':
     vae.compile(optimizer='adam')
     vae.summary()
     plot_model(vae,
-               to_file='vae_mlp.png',
+               to_file='vae_mlp_vcf.png',
                show_shapes=True)
 
     if args.weights:
@@ -213,7 +241,7 @@ if __name__ == '__main__':
                 epochs=epochs,
                 batch_size=batch_size,
                 validation_data=(x_test, None))
-        vae.save_weights('vae_mlp_mnist.h5')
+        vae.save_weights('vae_mlp_vcf.h5')
 
     plot_results(models,
                  data,
