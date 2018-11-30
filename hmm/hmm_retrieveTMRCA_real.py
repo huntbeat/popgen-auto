@@ -73,7 +73,7 @@ def parse_args():
         os.makedirs(opts.out_param)
 
     if opts.out_folder == None:
-        opts.out_folder = 'fig'
+        opts.out_folder = opts.out_param + 'figs/'
 
     if opts.num_processes == None:
         opts.num_processes = '1'
@@ -201,13 +201,13 @@ def main():
     # create bins and appropriate time intervals
     input_filename = opts.dif_fasta_filename
     input_filename = input_filename[input_filename.rfind('/'):]
-    print("This file is %s" % input_filename)
+    print("This file is %s" % input_filename[1:])
     with open(opts.dif_fasta_filename, 'r') as inputFasta:
         input_string = next(inputFasta).replace("\n","")
         input_param = "_".join(input_string.split(" ")[:-3])
         next(inputFasta) # rand number
         length = REAL_LENGTH
-        num_indivs = 20
+        num_indivs = 50
         num_iter = 1
         print("The length of the sequence is %d." % length)
         print("The number of individuals  is %d." % num_indivs)
@@ -348,8 +348,8 @@ def main():
                 plt.ylabel('TMRCA')
                 plt.legend(loc='upper right')
                 #plt.savefig(opts.dif_fasta_filename.replace('.msms','_lengthwise.png'))
-                plt.savefig('check_lengthwise.png')
-                plt.show()
+                plt.savefig(opts.out_folder + 'check_lengthwise.png')
+                #plt.show()
                 if True:
                     plt.close()
                     plt.figure(2, figsize=(14,8))
@@ -369,8 +369,8 @@ def main():
                     #    plt.axvline(x=xc, color='r', linestyle='--')
                     plt.legend(loc='upper right')
                     #plt.savefig(opts.dif_fasta_filename.replace('.msms','.png'))
-                    plt.savefig('check_TMRCA.png')
-                    plt.show()
+                    plt.savefig(opts.out_folder + 'check_TMRCA.png')
+                    #plt.show()
 
                 """
                 Baum-Welch Iteration outputs
@@ -385,14 +385,14 @@ def main():
                 plt.title('Baum-Welch accuracy plot')
                 plt.xlabel('Baum-Welch iteration')
                 plt.ylabel('Log-likelihood, P(X)')
-                plt.savefig('test_hmm/BW_training.png', format='png')
-                plt.show()
+                plt.savefig(opts.out_folder + 'test_hmm/BW_training.png', format='png')
+                #plt.show()
 
                 """
                 Estimated Parameters
                 """
                 estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
-                with open(opts.out_param + "/" + input_filename, 'w') as outputFile:
+                with open(opts.out_param + input_filename, 'w') as outputFile:
                      outputFile.write(estimated_param)
 
                 gc.collect()
@@ -403,9 +403,9 @@ def main():
                     demography.append('-eN')
                     demography.append(str(bins[i]))
                     demography.append(str(bars[i]))
-                import pdb; pdb.set_trace()
                 demography_string = ' '.join(demography)
-                demography_file = open('../simulationTest/MXL_demo.txt','w')
+                #demography_file = open('../simulationTest/MXL_demo.txt','w')
+                demography_file = open(opts.out_param + 'FIN_demo.txt','w')
                 demography_file.write(demography_string)
                 demography_file.close()
 
