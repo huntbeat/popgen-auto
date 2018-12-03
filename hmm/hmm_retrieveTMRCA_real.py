@@ -339,6 +339,27 @@ def main():
                 # Plot the estimated hidden time sequences
                 locus = np.array(list(range(length)))
 
+                """
+                Estimated Parameters
+                """
+                estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
+                with open(opts.out_param + input_filename, 'w') as outputFile:
+                     outputFile.write(estimated_param)
+
+                gc.collect()
+                bars = np.array(bw_posterior_mean_bars)
+                bars = bars / np.average(bars)
+                demography = []
+                for i in range(len(bars)):
+                    demography.append('-eN')
+                    demography.append(str(bins[i]))
+                    demography.append(str(bars[i]))
+                demography_string = ' '.join(demography)
+                #demography_file = open('../simulationTest/MXL_demo.txt','w')
+                demography_file = open(opts.out_param + 'FIN_demo.txt','w')
+                demography_file.write(demography_string)
+                demography_file.close()
+
                 plt.figure(0, figsize=(14,8))
                 plt.title('locus - TMRCA : BW')
                 plt.plot(locus, bw_posterior_mean, color='seagreen', label='post mean')
@@ -387,27 +408,6 @@ def main():
                 plt.ylabel('Log-likelihood, P(X)')
                 plt.savefig(opts.out_folder + 'test_hmm/BW_training.png', format='png')
                 #plt.show()
-
-                """
-                Estimated Parameters
-                """
-                estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
-                with open(opts.out_param + input_filename, 'w') as outputFile:
-                     outputFile.write(estimated_param)
-
-                gc.collect()
-                bars = np.array(bw_posterior_mean_bars)
-                bars = bars / np.average(bars)
-                demography = []
-                for i in range(len(bars)):
-                    demography.append('-eN')
-                    demography.append(str(bins[i]))
-                    demography.append(str(bars[i]))
-                demography_string = ' '.join(demography)
-                #demography_file = open('../simulationTest/MXL_demo.txt','w')
-                demography_file = open(opts.out_param + 'FIN_demo.txt','w')
-                demography_file.write(demography_string)
-                demography_file.close()
 
 if __name__ == "__main__":
   main()
