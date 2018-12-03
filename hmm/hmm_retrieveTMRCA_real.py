@@ -339,26 +339,6 @@ def main():
                 # Plot the estimated hidden time sequences
                 locus = np.array(list(range(length)))
 
-                """
-                Estimated Parameters
-                """
-                estimated_param = display_params([u_log_init, u_log_tran, u_log_emit])
-                with open(opts.out_param + "/" + input_filename, 'w') as outputFile:
-                     outputFile.write(estimated_param)
-
-                bars = np.array(bw_posterior_mean_bars)
-                bars = bars / np.average(bars)
-                demography = []
-                for i in range(len(bars)):
-                    demography.append('-eN')
-                    demography.append(str(bins[i]))
-                    demography.append(str(bars[i]))
-                demography_string = ' '.join(demography)
-                demography_file = open('../simulationTest/MXL_demo.txt','w')
-                demography_file.write(demography_string)
-                demography_file.close()
-                gc.collect()
-
                 plt.figure(0, figsize=(14,8))
                 plt.title('locus - TMRCA : BW')
                 plt.plot(locus, bw_posterior_mean, color='seagreen', label='post mean')
@@ -408,8 +388,6 @@ def main():
                 plt.savefig(opts.out_folder + 'test_hmm/BW_training.png', format='png')
                 #plt.show()
 
-<<<<<<< HEAD
-=======
                 """
                 Estimated Parameters
                 """
@@ -431,6 +409,6 @@ def main():
                 demography_file.write(demography_string)
                 demography_file.close()
 
->>>>>>> e211b3399cadeb3ff082538575c0abab8ef55a5e
 if __name__ == "__main__":
   main()
+
