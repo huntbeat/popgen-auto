@@ -104,9 +104,8 @@ def pipeline(param_array, num_sims):
     param_names = ['-t']
     msms_command = msms_commandline(param_names, param_array)
     for i in range(num_sims):
-        import pdb; pdb.set_trace()
-        msms_command += ' > ' + 'example/data/demo7/data' + str(i) + '.msms'
-        subprocess.call(msms_command, shell=True)
+        msms_command_new = msms_command + ' > ' + 'example/data/demo7/data' + str(i) + '.msms'
+        subprocess.call(msms_command_new, shell=True)
 
     # 2. calculate summary statistics
     # subprocess
@@ -115,6 +114,7 @@ def pipeline(param_array, num_sims):
     
     # 3. translate summary statistics to autoencoder data
     # turn txt file to input file
+    import pdb; pdb.set_trace()
     stats = stat2list('example/stats/stats_7.txt')
     stats = np.array(stats)
     stats -= np.amin(stats, axis=1).reshape(-1, 1)
@@ -134,7 +134,8 @@ def pipeline(param_array, num_sims):
 
     # run it, get output from function
     print('-----------x----------')
-    print(x_all)
+    print(np.mean(x_all, axis=0))
+    print(np.std(x_all, axis=0))
     y_all = encoder.predict(x_all)
 
     print('-----------y----------')

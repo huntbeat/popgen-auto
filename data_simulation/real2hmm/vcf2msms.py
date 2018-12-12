@@ -146,7 +146,7 @@ def chrom2msms(vcf_filename, chrom, sample_size, start, length, sample_list=None
         start = start+length
 
         if len(reformatted_hap_list) == 0:
-            no_snp_file.write('No SNP in segment '+str(start-length)+'-'+str(start)+', at '+str(counter))
+            no_snp_file.write('No SNP in segment '+str(start-length)+'-'+str(start)+', at '+str(counter)+'\n')
             continue
         reformatted_hap_list = np.transpose(np.array(reformatted_hap_list))
         print(reformatted_hap_list.shape)

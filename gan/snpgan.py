@@ -9,7 +9,6 @@ from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 import keras.backend as K
-# K.set_image_dim_ordering('th')
 
 # turns off plotting
 import matplotlib
@@ -19,24 +18,27 @@ import matplotlib.pyplot as plt
 plt.ioff()
 
 import numpy as np
-from vcf_input import *
+from vcf2input import *
 from random import uniform
 from tqdm import tqdm
+import h5py
+
+DATASET = 80000
 
 class INFOGAN():
     def __init__(self):
         self.filename = '/scratch/hlee6/vcf/ALL.chr21.vcf.gz'
         self.chrom = 21
-        self.sample_size = 28
-        self.length = 10e3
-        self.START = find_SNP_start(filename=self.filename, chrom=self.chrom) - self.length
+        self.sample_size = 12
+        self.length = 10e4
+        self.START = find_SNP_start(filename=self.filename) - self.length
         self.END = 48119740 - self.length
         self.pop_stats = [0 for i in range(3)] # stats: S, pi T_D 
 
         self.channel_max = [] # first channel: num_individuals, second channel: SNP distance
 
         self.n = self.sample_size
-        self.l = 64
+        self.l = 400
 
         self.img_rows = self.n
         self.img_cols = self.l
@@ -166,19 +168,21 @@ class INFOGAN():
 
     def train(self, epochs, batch_size=128, sample_interval=50):
 
-        # Load the dataset
-        (old_X_train, old_y_train), (_, _) = mnist.load_data()
-
         X_train = []
         y_train = []
+          
+        dataset = DATASET 
 
-        dataset = 80000 
         random_start = int(uniform(self.START, self.END))
+        random_start = 39988628
+
+        sample_list = pick_population(csv_file='igsr_samples.tsv')
 
         for i in tqdm(range(dataset)):
-            x_input, y_input = cyvcf_to_input(filename= self.filename,
+            x_input, y_input = cyvcf2input(filename= self.filename,
             chrom=self.chrom, sample_size=self.sample_size,
-            start=random_start, length=self.length)
+            start=random_start, length=self.length, sample_list=sample_list)
+            print(y_input)
             for idx, stat in enumerate(y_input):
                self.pop_stats[idx] += stat / dataset
             X_input = pad_and_tile(x_input, length=self.img_cols, rows=self.img_rows)
@@ -201,6 +205,18 @@ class INFOGAN():
         # Move channel axis to last
         X_train = np.moveaxis(X_train, 1, -1)
         y_train = y_train.reshape(-1, 1)
+
+        with h5py.File('/scratch/saralab/ganInput.h5','w') as hf:
+            hf.create_dataset("X_train", data=X_train)
+
+        with h5py.File('/scratch/saralab/ganOutput.h5','w') as hf:
+            hf.create_dataset("y_train", data=y_train)
+
+        with h5py.File('/scratch/saralab/ganInput.h5','r') as hread:
+            X_train = hread['X_train'][:]
+
+        with h5py.File('/scratch/saralab/ganOutput.h5','r') as hread:
+            y_train = hread['y_train'][:]
 
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))

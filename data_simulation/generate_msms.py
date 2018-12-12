@@ -22,7 +22,8 @@ def main():
 
     sim_dir = '/scratch/saralab/third/'
     TMRCA_dir = '/scratch/saralab/third/TMRCA/'
-    files = ['strength0.txt','strength10.txt','strength100.txt','strength1000.txt']
+    files = ['strength0.msms']
+    #files = ['strength10.msms','strength100.msms','strength1000.msms']
 
     for f in files:
         read_files(f, strengths_dict, sim_dir, TMRCA_dir)
@@ -37,7 +38,7 @@ def read_files(f, strengths_dict, sim_dir, TMRCA_dir):
     strength, SNPs, positions = parse_sim(sim_dir+f,20,100000,strengths_dict)
     SNP_lengths = [mat.shape[1] for mat in SNPs]
     TMRCAs = parse_TMRCA(TMRCA_dir+f,20,SNP_lengths)
-    SNPs_matrices, TMRCAs_matrices, position_matrices = centered_padding(SNPs,TMRCAs,positions,1500)
+    SNPs_matrices, TMRCAs_matrices, position_matrices = centered_padding(SNPs,TMRCAs,positions,350)
     xSNPs.extend(SNPs_matrices)
     xTMRCAs.extend(TMRCAs_matrices)
     xPositions.extend(position_matrices)
@@ -68,7 +69,7 @@ def read_files(f, strengths_dict, sim_dir, TMRCA_dir):
 
     dset_name = sys.argv[1]
     path = '/scratch/saralab/'+dset_name+'.hdf5'
-    with h5py.File(path,'a') as ns:
+    with h5py.File(path,'w') as ns:
         #ns.create_dataset('SNPs', data=xSNPs)
         #ns.create_dataset('TMRCAs', data=np.array(xTMRCAs))
         #ns.create_dataset('positions', data=xPositions)
@@ -90,7 +91,7 @@ def parse_sim(filename, n, L, strengths_dict):
     num_sites_list = [] # corresponds to num sites per position vector
     count = 0 # to track parsing progress
 
-    file_code = int(filename.split('/')[4][8:].split('.')[0]) # example filename: scratch/saralab/first/strength10.txt
+    file_code = int(filename[1:].split('/')[3][8:].split('.')[0]) # example filename: scratch/saralab/first/strength10.txt
     ns_strength = strengths_dict[file_code]
 
     print("nat sel data: parsing SNPs matrices...")
@@ -127,10 +128,10 @@ def parse_sim(filename, n, L, strengths_dict):
     print("min sites:",min(num_sites_list))
     print("max sites:",max(num_sites_list))
     print("avg sites:",sum(num_sites_list)/len(num_sites_list))
-    over1500 = 0
+    over350 = 0
     for s in num_sites_list:
-        if s > 1500: over1500 += 1
-    print("over 1500 sites:",over1500)
+        if s > 350: over350 += 1
+    print("over 350 sites:", over350)
 
     return ns_strength, SNPs_matrices, position_matrices
 

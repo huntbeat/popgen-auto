@@ -15,7 +15,8 @@ import sys
 # READ VCF FILE
 #---------------
 
-def parse_msms(filename):
+def parse_msms(filename, window_size=100000, num_sim=100):
+    D_list = []
     """Read msms file line by line, parsing out SNP information"""
     with open(filename, 'r') as msms_file:
         input_string = next(msms_file)
@@ -25,58 +26,61 @@ def parse_msms(filename):
         Ne = int(input_param[2])
         sample_size = int(input_param[3])
         total_length = int(input_param[9])
-
         next(msms_file) # rand number
-        next(msms_file) # ""
-        next(msms_file) # //
-        seg_string = next(msms_file)
-        # segsites: 888
-        total_snps = int(seg_string.split(" ")[1])
-        window = 50000
-        genomic_locations = []
 
-        # Start and end
-        pos_start = 0
-        pos_end = total_length
+        for i in range(num_sim,sample_size+4):
+            next(msms_file) # ""
+            next(msms_file) # //
+            seg_string = next(msms_file)
+            # segsites: 888
+            total_snps = int(seg_string.split(" ")[1])
+            window = window_size
+            genomic_locations = []
 
-        # We want to look at base pair regions in the genome instead of grouping
-        # together SNPS (which could be across a long region), because related genes
-        # are next to each other
-        # If a SNP falls into one of these regions, save that there.
-        # bp_regions = list(range(112131266,112352266,1000))
-        bp_regions = list(range(pos_start // window * window, pos_end // window * window + window, window))
+            # Start and end
+            pos_start = 0
+            pos_end = total_length
 
-        bp_buckets = dict((el,[]) for el in bp_regions)
-        num_indivs = {} # {k: genomic_location, v: num_indivs}
+            # We want to look at base pair regions in the genome instead of grouping
+            # together SNPS (which could be across a long region), because related genes
+            # are next to each other
+            # If a SNP falls into one of these regions, save that there.
+            # bp_regions = list(range(112131266,112352266,1000))
+            bp_regions = list(range(pos_start // window * window, pos_end // window * window + window, window))
 
-        pos_string_list = next(msms_file).split(" ")[1:-1]
-        # positions: 0.00141 0.00249 0.00277 0.00328 0.00450 0.00453
-        # ["0.00141", "0.00249", ...]
-        seq_string_all = []
-        for line in msms_file:
-            line = line.replace("\n", "")
-            if line != "":
-                seq_string_all.append(line)
-        pos_set = set()
-        idx_pos_list = []
-        for idx, pos_string in enumerate(pos_string_list):
-            pos = int(float(pos_string)*total_length)
-            while pos in pos_set:
-                pos += 1
-            pos_set.add(pos)
-            idx_pos_list.append((idx,pos))
+            bp_buckets = dict((el,[]) for el in bp_regions)
+            num_indivs = {} # {k: genomic_location, v: num_indivs}
 
-        for idx_pos in idx_pos_list:
-            idx, pos = idx_pos
-            genomic_locations.append(pos)
-            bp_buckets[pos // window * window].append(pos)
-            num = 0 # number of those that have the SNP
-            for indiv_seq_string in seq_string_all:
-                if indiv_seq_string[idx] == "1":
-                        num += 1
-            num_indivs[pos] = num
+            pos_string_list = next(msms_file).split(" ")[1:-1]
+            # positions: 0.00141 0.00249 0.00277 0.00328 0.00450 0.00453
+            # ["0.00141", "0.00249", ...]
+            seq_string_all = []
+            for line in msms_file:
+                line = line.replace("\n", "")
+                if line != "":
+                    seq_string_all.append(line)
+            pos_set = set()
+            idx_pos_list = []
+            for idx, pos_string in enumerate(pos_string_list):
+                pos = int(float(pos_string)*total_length)
+                while pos in pos_set:
+                    pos += 1
+                pos_set.add(pos)
+                idx_pos_list.append((idx,pos))
 
-    return bp_buckets, genomic_locations, num_indivs, sample_size, window, input_string, pos_start, pos_end
+            for idx_pos in idx_pos_list:
+                idx, pos = idx_pos
+                genomic_locations.append(pos)
+                bp_buckets[pos // window * window].append(pos)
+                num = 0 # number of those that have the SNP
+                for indiv_seq_string in seq_string_all:
+                    if indiv_seq_string[idx] == "1":
+                            num += 1
+                num_indivs[pos] = num
+
+            D = calculate_D(bp_buckets, genomic_locations, num_indivs, sample_size, window, input_string, pos_start, pos_end)
+            D_list.append(D)
+    return D_list
 
 def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_string, pos_start, pos_end):
 
@@ -135,6 +139,8 @@ def calculate_D(bp_buckets, genomic_locations, num_indivs, n, window, input_stri
         var_list.append(var_map[region])
 
     print_list = [D_list, bp_list, d_list, pi_list, S_list, var_list]
+    assert(len(D_list) == 1)
+    return D_list[0]
     print("D = %f" % np.average(np.array(D_list)))
     print("pi = %f" % np.average(np.array(pi_list)))
     print("S = %f" % np.average(np.array(S_list)))
