@@ -46,7 +46,7 @@ THETA = 4*Ne*MU
 RHO   = 4*Ne*R
 THETA_REGION = int(L * THETA)
 RHO_REGION   = int(L * RHO)
-SAMPLE_SIZE  = 20 # we have up to 197 ZI individuals
+SAMPLE_SIZE  = 10 # we have up to 197 ZI individuals
 
 # HARDSWEEP PARAMETERS, fixed for now, except selection location
 
