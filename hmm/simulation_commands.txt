@@ -1,0 +1,12 @@
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim0_1.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim0_2.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim0_3.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim0_4.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim10_1.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim10_2.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim10_3.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim10_4.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim100_1.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim100_2.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim100_3.txt -p updated_param/million.txt -b 16 -i 1 -n 8
+python3 hmm_retrieveTMRCA_onepair.py -d /scratch/saralab/first/sim100_4.txt -p updated_param/million.txt -b 16 -i 1 -n 8
